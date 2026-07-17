@@ -2,7 +2,15 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--
+    viewport-fit=cover 让页面在全面屏设备上正确使用可视区域；
+    interactive-widget=resizes-content 让软键盘弹出时缩小页面，而不是遮住密码输入框。
+  -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <!-- 这是单文件原型，禁用本地页面缓存可以减少手机继续显示旧版本的概率。 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>雾港来信 - 手机解谜 MVP</title>
   <style>
     /*
@@ -38,8 +46,14 @@
       box-sizing: border-box;
     }
 
+    html {
+      min-height: 100%;
+      background: #07080b;
+    }
+
     body {
       min-height: 100vh;
+      min-height: 100dvh;
       margin: 0;
       display: grid;
       place-items: center;
@@ -78,6 +92,7 @@
     .stage {
       width: min(100vw, 520px);
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1142,19 +1157,42 @@
     }
 
     @media (max-width: 420px) {
+      /*
+        手机上的关键修复：父级必须有明确的 height，内部的 height: 100% 才能计算。
+        之前这里只有 min-height，导致 .phone 在部分安卓浏览器里高度塌缩，
+        锁屏内容层也随之变成 0，只剩顶部状态栏和一大片黑色外壳背景。
+
+        先写 100vh 兼容旧浏览器，再用 100dvh 覆盖：动态视口单位会自动扣除
+        浏览器地址栏和底部工具栏，更适合手机竖屏网页。
+      */
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
       .stage {
+        width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        min-height: 0;
         padding: 0;
       }
 
       .phone-shell {
         width: 100%;
-        min-height: 100vh;
+        height: 100%;
+        min-height: 0;
         aspect-ratio: auto;
         border-radius: 0;
         padding: 0;
       }
 
       .phone {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
         border-radius: 0;
       }
 
