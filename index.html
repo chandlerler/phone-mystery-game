@@ -11,6 +11,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
+  <!-- 头像是首屏锁屏通知的一部分，提前加载可以减少图片闪现。 -->
+  <link rel="preload" as="image" href="assets/lin-xia-avatar.jpg">
   <title>雾港来信 - 手机解谜 MVP</title>
   <style>
     /*
@@ -627,7 +629,25 @@
     }
 
     /*
-      v1.02 应用 Logo：图形来自本地 Lucide 图标库并内嵌到页面。
+      角色头像统一从 assets 目录读取。object-fit 让不同尺寸的原图都能稳定填满头像框，
+      object-position 稍微上移，避免方形裁切时把人物面部压到下方。
+    */
+    .character-avatar {
+      object-fit: cover;
+      object-position: 50% 34%;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, .24);
+      background: #263028;
+      box-shadow: 0 5px 14px rgba(0, 0, 0, .22);
+    }
+
+    img.notice-icon {
+      flex: 0 0 34px;
+      display: block;
+    }
+
+    /*
+      应用 Logo：图形来自本地 Lucide 图标库并内嵌到页面。
       统一使用 currentColor，既能保持同一套线条语言，也方便不同应用使用独立配色。
     */
     .app-logo-svg {
@@ -926,12 +946,7 @@
     .avatar {
       width: 42px;
       height: 42px;
-      border-radius: 15px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(135deg, #7bdcff, #5a8cff);
-      color: #07111f;
-      font-weight: 500;
+      flex: 0 0 42px;
     }
 
     .contact-card b {
@@ -966,6 +981,7 @@
 
     .msg.npc {
       align-items: flex-start;
+      max-width: 90%;
     }
 
     .msg.player {
@@ -997,6 +1013,22 @@
       padding: 0 4px;
       color: var(--dim);
       font-size: 11px;
+    }
+
+    .msg-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .msg-avatar {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 28px;
+    }
+
+    .msg.npc .msg-time {
+      padding-left: 36px;
     }
 
     .choice-panel {
@@ -1068,6 +1100,23 @@
       color: var(--muted);
       font-size: 13px;
       line-height: 1.7;
+    }
+
+    .post-author {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .post-author .character-avatar {
+      width: 36px;
+      height: 36px;
+      flex: 0 0 36px;
+    }
+
+    .post-author h3 {
+      margin: 0;
     }
 
     .doc-meta,
@@ -1576,7 +1625,7 @@
 
           <footer class="menu-footer">
             <span>制作者 · chandlerler</span>
-            <span id="menuVersion">v1.02</span>
+            <span id="menuVersion">v1.03</span>
           </footer>
         </section>
 
@@ -1599,9 +1648,7 @@
               <div class="lock-time" id="lockTime">22:17</div>
               <div class="lock-date">7月17日 周五 · 雾港市</div>
               <button class="lock-notice" type="button" data-lock-open-chat>
-                <span class="notice-icon">
-                  <svg class="app-logo-svg logo-chat" aria-hidden="true"><use href="#logo-chat"></use></svg>
-                </span>
+                <img class="notice-icon character-avatar" src="assets/lin-xia-avatar.jpg" alt="林夏">
                 <span>
                   <b>林夏</b>
                   <span>我把线索留在旧手机里了。先解锁。</span>
@@ -1632,9 +1679,7 @@
               <button class="quick-toggle" type="button">电量<br>72%</button>
             </div>
             <button class="shade-card" type="button" data-open-app="chat">
-              <span class="notice-icon">
-                <svg class="app-logo-svg logo-chat" aria-hidden="true"><use href="#logo-chat"></use></svg>
-              </span>
+              <img class="notice-icon character-avatar" src="assets/lin-xia-avatar.jpg" alt="">
               <span>
                 <b>微讯 · 林夏</b>
                 <span id="shadeNoticeText">我把线索留在旧手机里了。</span>
@@ -1659,9 +1704,7 @@
             </div>
 
             <button class="notice" type="button" data-open-app="chat">
-              <span class="notice-icon">
-                <svg class="app-logo-svg logo-chat" aria-hidden="true"><use href="#logo-chat"></use></svg>
-              </span>
+              <img class="notice-icon character-avatar" src="assets/lin-xia-avatar.jpg" alt="">
               <span>
                 <b>林夏</b>
                 <span id="noticeText">我把线索留在旧手机里了。</span>
@@ -1783,7 +1826,7 @@
       每次发布功能更新时，将 GAME_VERSION 增加 0.01，并同步记录到 CHANGELOG.md。
       版本号放在脚本常量中，后续可以在菜单、帮助页或存档信息里统一复用。
     */
-    const GAME_VERSION = "1.02";
+    const GAME_VERSION = "1.03";
     const GAME_CREATOR = "chandlerler";
 
     const GAME_DATA = {
@@ -2134,7 +2177,10 @@
       const visibleMessages = GAME_DATA.chatOpening.slice(0, Math.max(1, state.chatStep + 1));
       const messagesHtml = visibleMessages.map((text, index) => `
         <div class="msg npc">
-          <div class="bubble">${escapeHtml(text)}</div>
+          <div class="msg-row">
+            <img class="msg-avatar character-avatar" src="assets/lin-xia-avatar.jpg" alt="">
+            <div class="bubble">${escapeHtml(text)}</div>
+          </div>
           <div class="msg-time">${index === 0 ? "22:17" : "刚刚"}</div>
         </div>
       `).join("");
@@ -2149,7 +2195,7 @@
       appBody.innerHTML = `
         <div class="chat-layout">
           <div class="contact-card">
-            <div class="avatar">林</div>
+            <img class="avatar character-avatar" src="assets/lin-xia-avatar.jpg" alt="林夏">
             <div>
               <b>林夏</b>
               <span>${state.unlockedVault ? "在线 · 等你做最后决定" : "在线 · 消息已加密"}</span>
@@ -2318,7 +2364,10 @@
       appBody.innerHTML = `
         <div class="social-list">
           <article class="post-card">
-            <h3>林夏</h3>
+            <div class="post-author">
+              <img class="character-avatar" src="assets/lin-xia-avatar.jpg" alt="林夏">
+              <h3>林夏</h3>
+            </div>
             <p>出差三天，勿念。</p>
             <div class="post-image">定位：雾港中心站</div>
             <div class="post-meta">今天 21:03 · 这条动态看起来过于整齐</div>
