@@ -626,6 +626,38 @@
       font-size: 18px;
     }
 
+    /*
+      v1.02 应用 Logo：图形来自本地 Lucide 图标库并内嵌到页面。
+      统一使用 currentColor，既能保持同一套线条语言，也方便不同应用使用独立配色。
+    */
+    .app-logo-svg {
+      width: 30px;
+      height: 30px;
+      display: block;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
+
+    .notice-icon .app-logo-svg {
+      width: 20px;
+      height: 20px;
+      stroke-width: 2;
+    }
+
+    .logo-chat { color: #f4fff8; }
+    .logo-gallery { color: #fff8eb; }
+    .logo-docs { color: #f4fbff; }
+    .logo-browser { color: #f5fbff; }
+    .logo-social { color: #fff7fb; }
+    .logo-videos { color: #fff5f6; }
+    .logo-vault { color: #fff5d6; }
+    .logo-ending { color: #fff7ed; }
+    .logo-help { color: #f5fcff; }
+
     .notice b {
       display: block;
       font-size: 13px;
@@ -816,9 +848,24 @@
     }
 
     .app-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
       text-align: center;
       font-size: 15px;
       font-weight: 500;
+    }
+
+    .app-header-logo {
+      width: 19px;
+      height: 19px;
+      display: block;
+      fill: none;
+      stroke: var(--cyan);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .back-btn,
@@ -1445,6 +1492,52 @@
   </style>
 </head>
 <body>
+  <!--
+    应用 Logo 矢量精灵：只定义一次，桌面、Dock、通知和应用标题通过 <use> 复用。
+    这些路径取自项目内置的 Lucide 图标库，因此页面发布后不需要连接任何图标 CDN。
+  -->
+  <svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false">
+    <symbol id="logo-chat" viewBox="0 0 24 24">
+      <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>
+      <path d="M8 12h.01M12 12h.01M16 12h.01"/>
+    </symbol>
+    <symbol id="logo-gallery" viewBox="0 0 24 24">
+      <path d="m22 11-1.296-1.296a2.4 2.4 0 0 0-3.408 0L11 16"/>
+      <path d="M4 8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2"/>
+      <circle cx="13" cy="7" r="1" fill="currentColor"/>
+      <rect x="8" y="2" width="14" height="14" rx="2"/>
+    </symbol>
+    <symbol id="logo-docs" viewBox="0 0 24 24">
+      <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/>
+      <path d="M14 2v5a1 1 0 0 0 1 1h5M10 9H8M16 13H8M16 17H8"/>
+    </symbol>
+    <symbol id="logo-browser" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>
+    </symbol>
+    <symbol id="logo-social" viewBox="0 0 24 24">
+      <path d="M18 21a8 8 0 0 0-16 0"/>
+      <circle cx="10" cy="8" r="5"/>
+      <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/>
+    </symbol>
+    <symbol id="logo-videos" viewBox="0 0 24 24">
+      <path d="m12.296 3.464 3.02 3.956M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"/>
+      <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM6.18 5.276l3.1 3.899"/>
+    </symbol>
+    <symbol id="logo-vault" viewBox="0 0 24 24">
+      <circle cx="12" cy="16" r="1"/>
+      <rect x="3" y="10" width="18" height="12" rx="2"/>
+      <path d="M7 10V7a5 5 0 0 1 10 0v3"/>
+    </symbol>
+    <symbol id="logo-ending" viewBox="0 0 24 24">
+      <path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>
+    </symbol>
+    <symbol id="logo-help" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/>
+    </symbol>
+  </svg>
+
   <main class="stage">
     <section class="phone-shell" aria-label="模拟手机">
       <div class="phone">
@@ -1483,7 +1576,7 @@
 
           <footer class="menu-footer">
             <span>制作者 · chandlerler</span>
-            <span id="menuVersion">v1.01</span>
+            <span id="menuVersion">v1.02</span>
           </footer>
         </section>
 
@@ -1506,7 +1599,9 @@
               <div class="lock-time" id="lockTime">22:17</div>
               <div class="lock-date">7月17日 周五 · 雾港市</div>
               <button class="lock-notice" type="button" data-lock-open-chat>
-                <span class="notice-icon">信</span>
+                <span class="notice-icon">
+                  <svg class="app-logo-svg logo-chat" aria-hidden="true"><use href="#logo-chat"></use></svg>
+                </span>
                 <span>
                   <b>林夏</b>
                   <span>我把线索留在旧手机里了。先解锁。</span>
@@ -1537,14 +1632,18 @@
               <button class="quick-toggle" type="button">电量<br>72%</button>
             </div>
             <button class="shade-card" type="button" data-open-app="chat">
-              <span class="notice-icon">信</span>
+              <span class="notice-icon">
+                <svg class="app-logo-svg logo-chat" aria-hidden="true"><use href="#logo-chat"></use></svg>
+              </span>
               <span>
                 <b>微讯 · 林夏</b>
                 <span id="shadeNoticeText">我把线索留在旧手机里了。</span>
               </span>
             </button>
             <button class="shade-card" type="button" data-open-app="help">
-              <span class="notice-icon" style="background:linear-gradient(135deg,#6ed6ff,#5a8cff)">?</span>
+              <span class="notice-icon" style="background:linear-gradient(135deg,#6ed6ff,#5a8cff)">
+                <svg class="app-logo-svg logo-help" aria-hidden="true"><use href="#logo-help"></use></svg>
+              </span>
               <span>
                 <b>系统帮助</b>
                 <span>忘记下一步时，可以在帮助里看当前进度和提示。</span>
@@ -1560,7 +1659,9 @@
             </div>
 
             <button class="notice" type="button" data-open-app="chat">
-              <span class="notice-icon">信</span>
+              <span class="notice-icon">
+                <svg class="app-logo-svg logo-chat" aria-hidden="true"><use href="#logo-chat"></use></svg>
+              </span>
               <span>
                 <b>林夏</b>
                 <span id="noticeText">我把线索留在旧手机里了。</span>
@@ -1569,58 +1670,87 @@
 
             <div class="app-grid" aria-label="手机桌面应用">
               <button class="app-icon" type="button" data-open-app="chat">
-                <span class="icon-tile" style="background:linear-gradient(135deg,#40d883,#159c5b)">微<span id="chatBadge" class="badge">1</span></span>
+                <span class="icon-tile" style="background:linear-gradient(135deg,#40d883,#159c5b)">
+                  <svg class="app-logo-svg logo-chat" aria-hidden="true"><use href="#logo-chat"></use></svg>
+                  <span id="chatBadge" class="badge">1</span>
+                </span>
                 <span>微讯</span>
               </button>
               <button class="app-icon" type="button" data-open-app="gallery">
-                <span class="icon-tile" style="background:linear-gradient(135deg,#ffcc66,#ff7ba8)">相</span>
+                <span class="icon-tile" style="background:linear-gradient(135deg,#ffcc66,#ff7ba8)">
+                  <svg class="app-logo-svg logo-gallery" aria-hidden="true"><use href="#logo-gallery"></use></svg>
+                </span>
                 <span>相册</span>
               </button>
               <button class="app-icon" type="button" data-open-app="docs">
-                <span class="icon-tile" style="background:linear-gradient(135deg,#6ed6ff,#5a8cff)">档</span>
+                <span class="icon-tile" style="background:linear-gradient(135deg,#6ed6ff,#5a8cff)">
+                  <svg class="app-logo-svg logo-docs" aria-hidden="true"><use href="#logo-docs"></use></svg>
+                </span>
                 <span>文档</span>
               </button>
               <button class="app-icon" type="button" data-open-app="browser">
-                <span class="icon-tile" style="background:linear-gradient(135deg,#8ee7ff,#6f87ff)">搜</span>
+                <span class="icon-tile" style="background:linear-gradient(135deg,#8ee7ff,#6f87ff)">
+                  <svg class="app-logo-svg logo-browser" aria-hidden="true"><use href="#logo-browser"></use></svg>
+                </span>
                 <span>浏览器</span>
               </button>
               <button class="app-icon" type="button" data-open-app="social">
-                <span class="icon-tile" style="background:linear-gradient(135deg,#ff8fb8,#a88bff)">圈</span>
+                <span class="icon-tile" style="background:linear-gradient(135deg,#ff8fb8,#a88bff)">
+                  <svg class="app-logo-svg logo-social" aria-hidden="true"><use href="#logo-social"></use></svg>
+                </span>
                 <span>朋友圈</span>
               </button>
               <button class="app-icon" type="button" data-open-app="videos">
-                <span class="icon-tile" style="background:linear-gradient(135deg,#303646,#111318)">影</span>
+                <span class="icon-tile" style="background:linear-gradient(135deg,#ef6a72,#48252d)">
+                  <svg class="app-logo-svg logo-videos" aria-hidden="true"><use href="#logo-videos"></use></svg>
+                </span>
                 <span>视频</span>
               </button>
               <button class="app-icon" type="button" data-open-app="vault">
-                <span class="icon-tile" style="background:linear-gradient(135deg,#343946,#1b1f29)">锁</span>
+                <span class="icon-tile" style="background:linear-gradient(135deg,#4f5360,#16181e)">
+                  <svg class="app-logo-svg logo-vault" aria-hidden="true"><use href="#logo-vault"></use></svg>
+                </span>
                 <span>私密箱</span>
               </button>
               <button class="app-icon" type="button" data-open-app="ending">
-                <span class="icon-tile" style="background:linear-gradient(135deg,#222734,#424a5d)">终</span>
+                <span class="icon-tile" style="background:linear-gradient(135deg,#ff9d66,#a23a54)">
+                  <svg class="app-logo-svg logo-ending" aria-hidden="true"><use href="#logo-ending"></use></svg>
+                </span>
                 <span>结局</span>
               </button>
               <button class="app-icon" type="button" data-open-app="help">
-                <span class="icon-tile" style="background:linear-gradient(135deg,#6ed6ff,#5a8cff)">?</span>
+                <span class="icon-tile" style="background:linear-gradient(135deg,#42d6c4,#4d7ff2)">
+                  <svg class="app-logo-svg logo-help" aria-hidden="true"><use href="#logo-help"></use></svg>
+                </span>
                 <span>帮助</span>
               </button>
             </div>
 
             <div class="dock">
               <button class="app-icon" type="button" data-open-app="chat">
-                <span class="icon-tile" style="background:linear-gradient(135deg,#40d883,#159c5b)">微</span>
+                <span class="icon-tile" style="background:linear-gradient(135deg,#40d883,#159c5b)">
+                  <svg class="app-logo-svg logo-chat" aria-hidden="true"><use href="#logo-chat"></use></svg>
+                </span>
               </button>
               <button class="app-icon" type="button" data-open-app="browser">
-                <span class="icon-tile" style="background:linear-gradient(135deg,#8ee7ff,#6f87ff)">搜</span>
+                <span class="icon-tile" style="background:linear-gradient(135deg,#8ee7ff,#6f87ff)">
+                  <svg class="app-logo-svg logo-browser" aria-hidden="true"><use href="#logo-browser"></use></svg>
+                </span>
               </button>
               <button class="app-icon" type="button" data-open-app="docs">
-                <span class="icon-tile" style="background:linear-gradient(135deg,#6ed6ff,#5a8cff)">档</span>
+                <span class="icon-tile" style="background:linear-gradient(135deg,#6ed6ff,#5a8cff)">
+                  <svg class="app-logo-svg logo-docs" aria-hidden="true"><use href="#logo-docs"></use></svg>
+                </span>
               </button>
               <button class="app-icon" type="button" data-open-app="vault">
-                <span class="icon-tile" style="background:linear-gradient(135deg,#343946,#1b1f29)">锁</span>
+                <span class="icon-tile" style="background:linear-gradient(135deg,#4f5360,#16181e)">
+                  <svg class="app-logo-svg logo-vault" aria-hidden="true"><use href="#logo-vault"></use></svg>
+                </span>
               </button>
               <button class="app-icon" type="button" data-open-app="help">
-                <span class="icon-tile" style="background:linear-gradient(135deg,#6ed6ff,#5a8cff)">?</span>
+                <span class="icon-tile" style="background:linear-gradient(135deg,#42d6c4,#4d7ff2)">
+                  <svg class="app-logo-svg logo-help" aria-hidden="true"><use href="#logo-help"></use></svg>
+                </span>
               </button>
             </div>
           </section>
@@ -1653,7 +1783,7 @@
       每次发布功能更新时，将 GAME_VERSION 增加 0.01，并同步记录到 CHANGELOG.md。
       版本号放在脚本常量中，后续可以在菜单、帮助页或存档信息里统一复用。
     */
-    const GAME_VERSION = "1.01";
+    const GAME_VERSION = "1.02";
     const GAME_CREATOR = "chandlerler";
 
     const GAME_DATA = {
@@ -1781,6 +1911,12 @@
         .replaceAll("'", "&#039;");
     }
 
+    /* 根据应用名生成统一 Logo；className 用于区分桌面、通知和标题栏尺寸。 */
+    function appLogoMarkup(appName, className = "app-logo-svg") {
+      const safeAppName = Object.prototype.hasOwnProperty.call(GAME_DATA.apps, appName) ? appName : "help";
+      return `<svg class="${className} logo-${safeAppName}" aria-hidden="true"><use href="#logo-${safeAppName}"></use></svg>`;
+    }
+
     function mark(key) {
       state[key] = true;
       saveState();
@@ -1792,7 +1928,7 @@
       const toast = document.createElement("div");
       toast.className = "toast";
       toast.innerHTML = `
-        <span class="notice-icon">信</span>
+        <span class="notice-icon">${appLogoMarkup("chat")}</span>
         <span>
           <b>${escapeHtml(title)}</b>
           <span>${escapeHtml(text)}</span>
@@ -1918,7 +2054,7 @@
       lockScreen.classList.remove("active");
       homeScreen.classList.remove("active");
       appScreen.classList.add("active");
-      appTitle.textContent = GAME_DATA.apps[appName] || "应用";
+      appTitle.innerHTML = `${appLogoMarkup(appName, "app-header-logo")}<span>${escapeHtml(GAME_DATA.apps[appName] || "应用")}</span>`;
 
       const renderMap = {
         chat: renderChat,
