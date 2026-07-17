@@ -1,0 +1,2040 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>雾港来信 - 手机解谜 MVP</title>
+  <style>
+    /*
+      这个文件是一个“最小可玩模型”：
+      - 所有界面、剧本、谜题逻辑都放在同一个 HTML 中，方便你直接打开试玩。
+      - 后续正式开发时，可以把 GAME_DATA 拆成 JSON 文件，把每个 App 拆成独立组件。
+      - 注释会尽量解释“为什么这样写”，而不是只解释语法。
+    */
+
+    :root {
+      color-scheme: dark;
+      --bg: #111318;
+      --bg-soft: #191c24;
+      --glass: rgba(25, 28, 36, .72);
+      --glass-strong: rgba(30, 34, 44, .9);
+      --line: rgba(255, 255, 255, .12);
+      --text: #f5f6fa;
+      --muted: #a8afbf;
+      --dim: #788194;
+      --green: #40d883;
+      --cyan: #6ed6ff;
+      --blue: #5a8cff;
+      --pink: #ff7ba8;
+      --amber: #ffcc66;
+      --danger: #ff6b78;
+      --shadow: 0 24px 80px rgba(0, 0, 0, .45);
+      --radius-phone: 42px;
+      --radius-app: 24px;
+      --font: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      overflow-x: hidden;
+      color: var(--text);
+      font-family: var(--font);
+      background:
+        radial-gradient(circle at 18% 16%, rgba(110, 214, 255, .2), transparent 28%),
+        radial-gradient(circle at 82% 12%, rgba(255, 123, 168, .16), transparent 30%),
+        linear-gradient(135deg, #0f1117 0%, #1b2030 42%, #12151c 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, transparent, rgba(255, 255, 255, .035), transparent),
+        radial-gradient(circle at 50% 100%, rgba(64, 216, 131, .08), transparent 34%);
+      opacity: .8;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: 0;
+      color: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .stage {
+      width: min(100vw, 520px);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+    }
+
+    .progress-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 26px;
+    }
+
+    .progress-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .progress-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .22);
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, .04);
+      flex: 0 0 auto;
+    }
+
+    .progress-item.done {
+      color: var(--text);
+    }
+
+    .progress-item.done .progress-dot {
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(64, 216, 131, .16);
+    }
+
+    .phone-shell {
+      width: min(100%, 410px);
+      aspect-ratio: 9 / 19.5;
+      margin-inline: auto;
+      padding: 12px;
+      border-radius: var(--radius-phone);
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, .18), transparent 18%),
+        linear-gradient(330deg, rgba(255, 255, 255, .08), transparent 22%),
+        #07080b;
+      box-shadow: var(--shadow), inset 0 0 0 1px rgba(255, 255, 255, .08);
+      position: relative;
+      animation: phoneRise .45s ease both;
+    }
+
+    .phone {
+      height: 100%;
+      overflow: hidden;
+      border-radius: calc(var(--radius-phone) - 12px);
+      position: relative;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, .1), transparent 34%),
+        radial-gradient(circle at 30% 10%, rgba(110, 214, 255, .35), transparent 32%),
+        radial-gradient(circle at 78% 4%, rgba(255, 204, 102, .24), transparent 28%),
+        linear-gradient(160deg, #1b2433, #0d1119 58%, #171922);
+    }
+
+    .speaker {
+      width: 96px;
+      height: 26px;
+      border-radius: 0 0 18px 18px;
+      background: #07080b;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      z-index: 20;
+      transform: translateX(-50%);
+    }
+
+    .status-bar {
+      height: 44px;
+      padding: 12px 24px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 500;
+      position: relative;
+      z-index: 42;
+    }
+
+    .shade-grip {
+      position: absolute;
+      left: 50%;
+      top: 7px;
+      width: 116px;
+      height: 28px;
+      transform: translateX(-50%);
+      border-radius: 0 0 18px 18px;
+      background: transparent;
+      z-index: 44;
+      cursor: grab;
+    }
+
+    .signal {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: rgba(255, 255, 255, .88);
+    }
+
+    .battery {
+      width: 24px;
+      height: 12px;
+      border: 1.5px solid currentColor;
+      border-radius: 4px;
+      padding: 2px;
+      position: relative;
+    }
+
+    .battery::after {
+      content: "";
+      width: 2px;
+      height: 6px;
+      border-radius: 0 2px 2px 0;
+      background: currentColor;
+      position: absolute;
+      right: -4px;
+      top: 2px;
+    }
+
+    .battery span {
+      display: block;
+      width: 72%;
+      height: 100%;
+      border-radius: 2px;
+      background: var(--green);
+    }
+
+    .screen {
+      position: absolute;
+      inset: 44px 0 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .home-screen,
+    .app-screen,
+    .lock-screen {
+      position: absolute;
+      inset: 0;
+      display: none;
+      animation: appIn .22s ease both;
+    }
+
+    .home-screen.active,
+    .app-screen.active,
+    .lock-screen.active {
+      display: flex;
+    }
+
+    .lock-screen {
+      z-index: 32;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 54px 24px 26px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, .08), transparent 38%),
+        radial-gradient(circle at 50% 18%, rgba(110, 214, 255, .24), transparent 32%),
+        linear-gradient(160deg, #161b26, #090b10 68%);
+    }
+
+    .lock-top {
+      text-align: center;
+    }
+
+    .lock-time {
+      font-size: 64px;
+      line-height: 1;
+      font-weight: 500;
+    }
+
+    .lock-date {
+      margin-top: 8px;
+      color: rgba(255, 255, 255, .72);
+      font-size: 14px;
+    }
+
+    .lock-notice {
+      margin-top: 28px;
+      padding: 13px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+      background: rgba(255, 255, 255, .11);
+      border: 1px solid rgba(255, 255, 255, .13);
+      backdrop-filter: blur(16px);
+      animation: notifyIn .55s ease both .25s;
+    }
+
+    .lock-unlock {
+      display: grid;
+      gap: 12px;
+    }
+
+    .lock-hint {
+      text-align: center;
+      color: rgba(255, 255, 255, .72);
+      font-size: 13px;
+    }
+
+    .lock-pass {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    .lock-pass input {
+      min-width: 0;
+      height: 46px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 16px;
+      padding: 0 14px;
+      background: rgba(255, 255, 255, .1);
+      color: var(--text);
+      outline: none;
+      text-align: center;
+      letter-spacing: 6px;
+    }
+
+    .lock-pass input:focus {
+      border-color: rgba(110, 214, 255, .72);
+      box-shadow: 0 0 0 4px rgba(110, 214, 255, .13);
+    }
+
+    .unlock-btn {
+      width: 54px;
+      height: 46px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--green), var(--cyan));
+      color: #071015;
+      font-size: 20px;
+    }
+
+    .lock-error {
+      min-height: 20px;
+      color: var(--danger);
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .swipe-pill {
+      width: 132px;
+      height: 5px;
+      margin: 4px auto 0;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .48);
+      animation: breathe 1.8s ease-in-out infinite;
+    }
+
+    .home-screen {
+      flex-direction: column;
+      padding: 26px 24px 22px;
+    }
+
+    .date-card {
+      margin-top: 12px;
+    }
+
+    .date-card .time {
+      font-size: 54px;
+      line-height: 1;
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+
+    .date-card .date {
+      margin-top: 6px;
+      color: rgba(255, 255, 255, .72);
+      font-size: 14px;
+    }
+
+    .notice {
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, .1);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, .12);
+      animation: notifyIn .45s ease both .15s;
+    }
+
+    .notice-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--green), #1a9f62);
+      font-size: 18px;
+    }
+
+    .notice b {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .notice span {
+      color: rgba(255, 255, 255, .72);
+      font-size: 12px;
+    }
+
+    .app-grid {
+      margin-top: auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px 14px;
+    }
+
+    .app-icon {
+      display: grid;
+      justify-items: center;
+      gap: 7px;
+      background: transparent;
+      padding: 0;
+    }
+
+    .icon-tile {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 25px;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .28);
+      position: relative;
+      transition: transform .16s ease, filter .16s ease;
+    }
+
+    .app-icon:active .icon-tile,
+    .choice-btn:active,
+    .small-btn:active,
+    .back-btn:active,
+    .desktop-btn:active,
+    .notice:active,
+    .photo-card:active {
+      transform: scale(.96);
+      filter: brightness(1.12);
+    }
+
+    .app-icon > span:not(.icon-tile) {
+      max-width: 68px;
+      color: rgba(255, 255, 255, .88);
+      font-size: 12px;
+      text-shadow: 0 1px 5px rgba(0, 0, 0, .55);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge {
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      position: absolute;
+      right: -6px;
+      top: -5px;
+      background: var(--danger);
+      color: white;
+      font-size: 11px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, .32);
+    }
+
+    .dock {
+      margin-top: 22px;
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      border-radius: 28px;
+      background: rgba(255, 255, 255, .12);
+      border: 1px solid rgba(255, 255, 255, .1);
+      backdrop-filter: blur(18px);
+    }
+
+    .app-screen {
+      flex-direction: column;
+      background: var(--bg);
+    }
+
+    .notification-shade {
+      position: absolute;
+      inset: -44px 0 auto;
+      min-height: 390px;
+      padding: 58px 16px 18px;
+      border-radius: 0 0 30px 30px;
+      background: rgba(14, 17, 24, .86);
+      border-bottom: 1px solid rgba(255, 255, 255, .12);
+      backdrop-filter: blur(24px);
+      box-shadow: 0 28px 70px rgba(0, 0, 0, .42);
+      transform: translateY(-108%);
+      transition: transform .32s cubic-bezier(.2, .8, .2, 1);
+      z-index: 40;
+    }
+
+    .notification-shade.open {
+      transform: translateY(0);
+    }
+
+    .shade-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: rgba(255, 255, 255, .78);
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .quick-toggle {
+      height: 58px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      gap: 3px;
+      background: rgba(255, 255, 255, .09);
+      color: rgba(255, 255, 255, .86);
+      font-size: 12px;
+    }
+
+    .quick-toggle.on {
+      background: linear-gradient(135deg, rgba(64, 216, 131, .92), rgba(110, 214, 255, .78));
+      color: #061015;
+    }
+
+    .shade-card {
+      display: flex;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 18px;
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, .1);
+      border: 1px solid rgba(255, 255, 255, .1);
+      text-align: left;
+      width: 100%;
+    }
+
+    .shade-card b,
+    .lock-notice b {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .shade-card span,
+    .lock-notice span {
+      color: rgba(255, 255, 255, .7);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .shade-close {
+      width: 118px;
+      height: 5px;
+      margin: 14px auto 0;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .42);
+      display: block;
+    }
+
+    .app-header {
+      min-height: 52px;
+      padding: 8px 12px;
+      display: grid;
+      grid-template-columns: 42px 1fr 42px;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      background: rgba(20, 22, 29, .92);
+    }
+
+    .app-title {
+      text-align: center;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .back-btn,
+    .small-btn,
+    .home-indicator-btn {
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .08);
+      min-height: 36px;
+    }
+
+    .back-btn {
+      width: 38px;
+    }
+
+    .small-btn {
+      padding: 0 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .app-body {
+      min-height: 0;
+      flex: 1;
+      overflow: auto;
+    }
+
+    .bottom-home {
+      height: 24px;
+      display: grid;
+      place-items: center;
+      background: rgba(0, 0, 0, .12);
+    }
+
+    .home-indicator-btn {
+      width: 128px;
+      height: 5px;
+      min-height: 5px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .42);
+      padding: 0;
+    }
+
+    .chat-layout {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      height: 100%;
+    }
+
+    .contact-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .03);
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 15px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #7bdcff, #5a8cff);
+      color: #07111f;
+      font-weight: 500;
+    }
+
+    .contact-card b {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .contact-card span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .messages {
+      padding: 14px;
+      overflow: auto;
+      background:
+        linear-gradient(rgba(255, 255, 255, .025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .025) 1px, transparent 1px),
+        #11141b;
+      background-size: 22px 22px;
+    }
+
+    .msg {
+      max-width: 82%;
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      animation: messageIn .24s ease both;
+    }
+
+    .msg.npc {
+      align-items: flex-start;
+    }
+
+    .msg.player {
+      align-items: flex-end;
+      margin-left: auto;
+    }
+
+    .bubble {
+      padding: 10px 12px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, .14);
+    }
+
+    .npc .bubble {
+      border-top-left-radius: 5px;
+      background: #272b35;
+    }
+
+    .player .bubble {
+      border-top-right-radius: 5px;
+      background: linear-gradient(135deg, #2ecb78, #1b9f5f);
+      color: #06130d;
+    }
+
+    .msg-time {
+      padding: 0 4px;
+      color: var(--dim);
+      font-size: 11px;
+    }
+
+    .choice-panel {
+      padding: 10px 12px 12px;
+      display: grid;
+      gap: 8px;
+      border-top: 1px solid var(--line);
+      background: rgba(20, 22, 29, .96);
+    }
+
+    .choice-btn {
+      min-height: 40px;
+      padding: 8px 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .08);
+      color: var(--text);
+      text-align: left;
+      line-height: 1.4;
+      transition: transform .14s ease, filter .14s ease, background .14s ease;
+    }
+
+    .choice-btn.primary {
+      background: linear-gradient(135deg, rgba(64, 216, 131, .95), rgba(68, 190, 255, .9));
+      color: #061015;
+    }
+
+    .empty-hint {
+      padding: 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    .notes-list,
+    .social-list,
+    .gallery {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .doc-card,
+    .post-card,
+    .photo-card,
+    .browser-result,
+    .video-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, .055);
+      overflow: hidden;
+    }
+
+    .doc-card {
+      padding: 14px;
+    }
+
+    .doc-card h3,
+    .post-card h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .doc-card p,
+    .post-card p,
+    .browser-result p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .doc-meta,
+    .post-meta {
+      margin-top: 10px;
+      color: var(--dim);
+      font-size: 12px;
+    }
+
+    .photo-thumb {
+      aspect-ratio: 4 / 3;
+      position: relative;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(110, 214, 255, .5), transparent 40%),
+        linear-gradient(315deg, rgba(255, 204, 102, .45), transparent 38%),
+        #252936;
+    }
+
+    .photo-thumb::before {
+      content: "";
+      width: 76%;
+      height: 58%;
+      border-radius: 10px;
+      border: 2px solid rgba(255, 255, 255, .38);
+      transform: rotate(-3deg);
+    }
+
+    .photo-label {
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .photo-label b {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .clue-chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(255, 204, 102, .16);
+      color: var(--amber);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .post-card {
+      padding: 14px;
+    }
+
+    .post-image {
+      height: 116px;
+      margin-top: 12px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, .08) 1px, transparent 1px),
+        linear-gradient(rgba(255, 255, 255, .08) 1px, transparent 1px),
+        linear-gradient(135deg, rgba(90, 140, 255, .35), rgba(255, 123, 168, .2));
+      background-size: 20px 20px, 20px 20px, auto;
+      color: rgba(255, 255, 255, .72);
+      font-size: 13px;
+    }
+
+    .browser {
+      padding: 14px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 8px;
+      position: sticky;
+      top: 0;
+      padding-bottom: 12px;
+      background: var(--bg);
+      z-index: 2;
+    }
+
+    .search-row input,
+    .passcode input {
+      min-width: 0;
+      flex: 1;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0 12px;
+      background: rgba(255, 255, 255, .08);
+      color: var(--text);
+      outline: none;
+    }
+
+    .search-row input:focus,
+    .passcode input:focus {
+      border-color: rgba(110, 214, 255, .65);
+      box-shadow: 0 0 0 3px rgba(110, 214, 255, .12);
+    }
+
+    .browser-result {
+      padding: 13px;
+      margin-bottom: 10px;
+    }
+
+    .browser-result b {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--cyan);
+      font-weight: 500;
+    }
+
+    .browser-result small {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--green);
+    }
+
+    .locked {
+      display: grid;
+      gap: 14px;
+      align-content: center;
+      height: 100%;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .lock-icon {
+      width: 76px;
+      height: 76px;
+      margin: 0 auto;
+      border-radius: 24px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, .08);
+      font-size: 34px;
+    }
+
+    .locked h2 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    .locked p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 13px;
+    }
+
+    .passcode {
+      display: flex;
+      gap: 8px;
+    }
+
+    .error {
+      min-height: 20px;
+      color: var(--danger);
+      font-size: 12px;
+    }
+
+    .ending {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .ending-banner {
+      min-height: 180px;
+      border-radius: 22px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(64, 216, 131, .42), transparent 28%),
+        linear-gradient(135deg, rgba(90, 140, 255, .26), rgba(255, 123, 168, .18));
+      border: 1px solid var(--line);
+    }
+
+    .ending-banner h2 {
+      margin: 0 0 8px;
+      font-size: 26px;
+      font-weight: 500;
+    }
+
+    .ending-banner p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .video-card {
+      padding: 14px;
+    }
+
+    .video-box {
+      height: 150px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, .12), transparent),
+        #0b0d12;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .video-box::before,
+    .video-box::after {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 14px;
+    }
+
+    .play {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, .16);
+      backdrop-filter: blur(12px);
+      font-size: 22px;
+    }
+
+    .reset-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .help-page {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .help-hero {
+      padding: 16px;
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 82% 12%, rgba(110, 214, 255, .28), transparent 34%),
+        rgba(255, 255, 255, .06);
+      border: 1px solid var(--line);
+    }
+
+    .help-hero h2 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      font-weight: 500;
+    }
+
+    .help-hero p,
+    .help-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 13px;
+    }
+
+    .help-card {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .055);
+    }
+
+    .help-card h3 {
+      margin: 0 0 9px;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .desktop-btn {
+      min-height: 42px;
+      padding: 0 16px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .1);
+      border: 1px solid rgba(255, 255, 255, .12);
+    }
+
+    .desktop-btn.primary {
+      background: linear-gradient(135deg, var(--green), var(--cyan));
+      color: #071015;
+      border-color: transparent;
+    }
+
+    .toast {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      top: 52px;
+      z-index: 46;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(28, 32, 42, .92);
+      border: 1px solid rgba(255, 255, 255, .12);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, .32);
+      backdrop-filter: blur(18px);
+      animation: toastDrop 3.2s ease both;
+      pointer-events: none;
+    }
+
+    @keyframes phoneRise {
+      from { transform: translateY(16px) scale(.985); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    @keyframes appIn {
+      from { transform: translateY(10px); opacity: .6; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes notifyIn {
+      from { transform: translateY(-8px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes messageIn {
+      from { transform: translateY(6px) scale(.98); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    @keyframes toastDrop {
+      0% { transform: translateY(-22px); opacity: 0; }
+      12%, 78% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-18px); opacity: 0; }
+    }
+
+    @keyframes breathe {
+      0%, 100% { opacity: .45; transform: scaleX(.88); }
+      50% { opacity: .9; transform: scaleX(1); }
+    }
+
+    @media (max-width: 820px) {
+      body {
+        display: block;
+      }
+
+      .stage {
+        min-height: 100vh;
+        padding: 16px;
+      }
+
+      .phone-shell {
+        width: min(100%, 390px);
+      }
+    }
+
+    @media (max-width: 420px) {
+      .stage {
+        padding: 0;
+      }
+
+      .phone-shell {
+        width: 100%;
+        min-height: 100vh;
+        aspect-ratio: auto;
+        border-radius: 0;
+        padding: 0;
+      }
+
+      .phone {
+        border-radius: 0;
+      }
+
+      .speaker {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <section class="phone-shell" aria-label="模拟手机">
+      <div class="phone">
+        <div class="speaker" aria-hidden="true"></div>
+        <div class="status-bar">
+          <button class="shade-grip" type="button" id="shadeGrip" aria-label="打开通知栏"></button>
+          <span id="clock">22:17</span>
+          <span class="signal">
+            5G
+            <span class="battery" aria-hidden="true"><span></span></span>
+          </span>
+        </div>
+
+        <div class="screen">
+          <section id="lockScreen" class="lock-screen active">
+            <div class="lock-top">
+              <div class="lock-time" id="lockTime">22:17</div>
+              <div class="lock-date">7月17日 周五 · 雾港市</div>
+              <button class="lock-notice" type="button" data-lock-open-chat>
+                <span class="notice-icon">信</span>
+                <span>
+                  <b>林夏</b>
+                  <span>我把线索留在旧手机里了。先解锁。</span>
+                </span>
+              </button>
+            </div>
+
+            <div class="lock-unlock">
+              <div class="lock-hint">输入手机密码 · 提示：林夏最后同步的时间</div>
+              <div class="lock-pass">
+                <input id="phonePassInput" type="password" inputmode="numeric" maxlength="4" placeholder="••••" aria-label="手机解锁密码">
+                <button class="unlock-btn" type="button" id="phoneUnlockBtn" aria-label="解锁手机">›</button>
+              </div>
+              <div class="lock-error" id="phoneLockError"></div>
+              <div class="swipe-pill"></div>
+            </div>
+          </section>
+
+          <div id="notificationShade" class="notification-shade" aria-hidden="true">
+            <div class="shade-header">
+              <span id="shadeDate">7月17日 周五</span>
+              <span>旧手机</span>
+            </div>
+            <div class="quick-grid" aria-label="快捷开关">
+              <button class="quick-toggle on" type="button">5G<br>在线</button>
+              <button class="quick-toggle on" type="button">定位<br>开启</button>
+              <button class="quick-toggle" type="button">静音<br>关闭</button>
+              <button class="quick-toggle" type="button">电量<br>72%</button>
+            </div>
+            <button class="shade-card" type="button" data-open-app="chat">
+              <span class="notice-icon">信</span>
+              <span>
+                <b>微讯 · 林夏</b>
+                <span id="shadeNoticeText">我把线索留在旧手机里了。</span>
+              </span>
+            </button>
+            <button class="shade-card" type="button" data-open-app="help">
+              <span class="notice-icon" style="background:linear-gradient(135deg,#6ed6ff,#5a8cff)">?</span>
+              <span>
+                <b>系统帮助</b>
+                <span>忘记下一步时，可以在帮助里看当前进度和提示。</span>
+              </span>
+            </button>
+            <button class="shade-close" type="button" id="shadeClose" aria-label="收起通知栏"></button>
+          </div>
+
+          <section id="homeScreen" class="home-screen">
+            <div class="date-card">
+              <div class="time" id="homeTime">22:17</div>
+              <div class="date">7月17日 周五 · 雾港市</div>
+            </div>
+
+            <button class="notice" type="button" data-open-app="chat">
+              <span class="notice-icon">信</span>
+              <span>
+                <b>林夏</b>
+                <span id="noticeText">我把线索留在旧手机里了。</span>
+              </span>
+            </button>
+
+            <div class="app-grid" aria-label="手机桌面应用">
+              <button class="app-icon" type="button" data-open-app="chat">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#40d883,#159c5b)">微<span id="chatBadge" class="badge">1</span></span>
+                <span>微讯</span>
+              </button>
+              <button class="app-icon" type="button" data-open-app="gallery">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#ffcc66,#ff7ba8)">相</span>
+                <span>相册</span>
+              </button>
+              <button class="app-icon" type="button" data-open-app="docs">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#6ed6ff,#5a8cff)">档</span>
+                <span>文档</span>
+              </button>
+              <button class="app-icon" type="button" data-open-app="browser">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#8ee7ff,#6f87ff)">搜</span>
+                <span>浏览器</span>
+              </button>
+              <button class="app-icon" type="button" data-open-app="social">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#ff8fb8,#a88bff)">圈</span>
+                <span>朋友圈</span>
+              </button>
+              <button class="app-icon" type="button" data-open-app="videos">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#303646,#111318)">影</span>
+                <span>视频</span>
+              </button>
+              <button class="app-icon" type="button" data-open-app="vault">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#343946,#1b1f29)">锁</span>
+                <span>私密箱</span>
+              </button>
+              <button class="app-icon" type="button" data-open-app="ending">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#222734,#424a5d)">终</span>
+                <span>结局</span>
+              </button>
+              <button class="app-icon" type="button" data-open-app="help">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#6ed6ff,#5a8cff)">?</span>
+                <span>帮助</span>
+              </button>
+            </div>
+
+            <div class="dock">
+              <button class="app-icon" type="button" data-open-app="chat">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#40d883,#159c5b)">微</span>
+              </button>
+              <button class="app-icon" type="button" data-open-app="browser">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#8ee7ff,#6f87ff)">搜</span>
+              </button>
+              <button class="app-icon" type="button" data-open-app="docs">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#6ed6ff,#5a8cff)">档</span>
+              </button>
+              <button class="app-icon" type="button" data-open-app="vault">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#343946,#1b1f29)">锁</span>
+              </button>
+              <button class="app-icon" type="button" data-open-app="help">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#6ed6ff,#5a8cff)">?</span>
+              </button>
+            </div>
+          </section>
+
+          <section id="appScreen" class="app-screen" aria-live="polite">
+            <header class="app-header">
+              <button class="back-btn" type="button" id="backBtn" aria-label="返回桌面">‹</button>
+              <div class="app-title" id="appTitle">应用</div>
+              <button class="small-btn" type="button" id="hintBtn">提示</button>
+            </header>
+            <div class="app-body" id="appBody"></div>
+            <div class="bottom-home">
+              <button class="home-indicator-btn" type="button" id="homeBtn" aria-label="回到桌面"></button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /*
+      =====================
+      一、内容与谜题数据
+      =====================
+      这里是原型最重要的“内容层”。
+      正式项目中建议把这些数据拆到 data/*.json，让编剧可以只改文本，不碰逻辑代码。
+    */
+    const GAME_DATA = {
+      phonePassword: "2217",
+      password: "0717",
+      apps: {
+        chat: "微讯",
+        gallery: "相册",
+        docs: "文档",
+        browser: "浏览器",
+        social: "朋友圈",
+        videos: "视频",
+        vault: "私密箱",
+        ending: "结局",
+        help: "帮助"
+      },
+      progress: [
+        { key: "openedChat", text: "读过林夏的第一条消息" },
+        { key: "viewedPhoto", text: "在旧相册里发现码头照片" },
+        { key: "searchedPier", text: "搜索过“雾港旧码头”" },
+        { key: "readDoc", text: "读过未命名档案" },
+        { key: "unlockedVault", text: "打开私密箱" }
+      ],
+      chatOpening: [
+        "你终于上线了。",
+        "别相信朋友圈里那条“出差”的动态。",
+        "我把真正的线索留在旧手机里：先看相册，找一张拍坏的码头照片。"
+      ],
+      photoClue: "照片背面有一行小字：雾港旧码头，7月17日，别迟到。",
+      docText: "未命名档案\n\n项目代号：回声。\n最后同步时间：07/17 22:17。\n备注：林夏只会把重要东西锁进四位日期里。",
+      browserResults: [
+        {
+          title: "雾港旧码头停运公告",
+          url: "local.search/wugang-pier",
+          text: "旧码头在 7 月 17 日晚出现短暂停电，监控记录缺失 17 分钟。"
+        },
+        {
+          title: "本地论坛：有人听见回声吗？",
+          url: "local.search/forum-echo",
+          text: "匿名用户提到“回声计划”的交接地点可能就在旧码头仓库。"
+        }
+      ]
+    };
+
+    /*
+      =====================
+      二、游戏状态
+      =====================
+      state 记录玩家已经看过哪些线索、是否解锁结局等。
+      localStorage 负责自动存档：刷新页面后仍然保留进度。
+    */
+    const defaultState = {
+      phoneUnlocked: false,
+      openedChat: false,
+      viewedPhoto: false,
+      searchedPier: false,
+      readDoc: false,
+      unlockedVault: false,
+      endingSeen: false,
+      chatStep: 0,
+      activeApp: null
+    };
+
+    const STORAGE_KEY = "fogport-phone-mystery-mvp";
+    let state = loadState();
+
+    function loadState() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return { ...defaultState };
+      try {
+        return { ...defaultState, ...JSON.parse(saved) };
+      } catch {
+        return { ...defaultState };
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderProgress();
+      updateBadges();
+    }
+
+    /*
+      =====================
+      三、基础 DOM 工具
+      =====================
+      小项目可以直接操作 DOM；后续变复杂后，可以迁移成 React/Vue 的组件状态。
+    */
+    const $ = (selector) => document.querySelector(selector);
+    const appBody = $("#appBody");
+    const appTitle = $("#appTitle");
+    const lockScreen = $("#lockScreen");
+    const homeScreen = $("#homeScreen");
+    const appScreen = $("#appScreen");
+    const notificationShade = $("#notificationShade");
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function mark(key) {
+      state[key] = true;
+      saveState();
+    }
+
+    function showToast(title, text) {
+      const oldToast = $(".toast");
+      if (oldToast) oldToast.remove();
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.innerHTML = `
+        <span class="notice-icon">信</span>
+        <span>
+          <b>${escapeHtml(title)}</b>
+          <span>${escapeHtml(text)}</span>
+        </span>
+      `;
+      $(".phone").appendChild(toast);
+      setTimeout(() => toast.remove(), 3300);
+    }
+
+    /*
+      =====================
+      四、导航系统
+      =====================
+      openApp 根据 app 名称渲染不同模拟应用。
+      每个 App 都是一个 renderXxx 函数，这样后续添加“邮箱”“短信”“地图”会很直观。
+    */
+    function openApp(appName) {
+      if (!state.phoneUnlocked) {
+        $("#phoneLockError").textContent = "先解锁手机。提示：最后同步时间是 22:17。";
+        $("#phonePassInput").focus();
+        return;
+      }
+
+      state.activeApp = appName;
+      closeNotificationShade();
+      lockScreen.classList.remove("active");
+      homeScreen.classList.remove("active");
+      appScreen.classList.add("active");
+      appTitle.textContent = GAME_DATA.apps[appName] || "应用";
+
+      const renderMap = {
+        chat: renderChat,
+        gallery: renderGallery,
+        docs: renderDocs,
+        browser: renderBrowser,
+        social: renderSocial,
+        videos: renderVideos,
+        vault: renderVault,
+        ending: renderEnding,
+        help: renderHelp
+      };
+
+      renderMap[appName]();
+      saveState();
+    }
+
+    function goHome() {
+      state.activeApp = null;
+      closeNotificationShade();
+      lockScreen.classList.remove("active");
+      appScreen.classList.remove("active");
+      homeScreen.classList.add("active");
+      saveState();
+    }
+
+    function initScreen() {
+      if (state.phoneUnlocked) {
+        lockScreen.classList.remove("active");
+        homeScreen.classList.add("active");
+      } else {
+        lockScreen.classList.add("active");
+        homeScreen.classList.remove("active");
+        appScreen.classList.remove("active");
+      }
+    }
+
+    function unlockPhone() {
+      const value = $("#phonePassInput").value.trim();
+      if (value === GAME_DATA.phonePassword) {
+        state.phoneUnlocked = true;
+        saveState();
+        $("#phoneLockError").textContent = "";
+        goHome();
+        showToast("微讯 · 林夏", "你终于上线了。");
+      } else {
+        $("#phoneLockError").textContent = "手机密码不对。提示：林夏最后同步的时间。";
+        $("#phonePassInput").select();
+      }
+    }
+
+    function toggleNotificationShade(forceOpen) {
+      if (!state.phoneUnlocked) {
+        $("#phoneLockError").textContent = "通知栏已锁定，先输入手机密码。";
+        return;
+      }
+      const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !notificationShade.classList.contains("open");
+      notificationShade.classList.toggle("open", shouldOpen);
+      notificationShade.setAttribute("aria-hidden", String(!shouldOpen));
+    }
+
+    function closeNotificationShade() {
+      notificationShade.classList.remove("open");
+      notificationShade.setAttribute("aria-hidden", "true");
+    }
+
+    /*
+      =====================
+      五、聊天 App
+      =====================
+      这个 MVP 用“点击选项推进剧情”的方式模拟聊天。
+      你以后可以把 choice 变成多分支，并让不同选择影响角色信任度。
+    */
+    function renderChat() {
+      mark("openedChat");
+
+      const visibleMessages = GAME_DATA.chatOpening.slice(0, Math.max(1, state.chatStep + 1));
+      const messagesHtml = visibleMessages.map((text, index) => `
+        <div class="msg npc">
+          <div class="bubble">${escapeHtml(text)}</div>
+          <div class="msg-time">${index === 0 ? "22:17" : "刚刚"}</div>
+        </div>
+      `).join("");
+
+      const playerReply = state.chatStep >= 3 ? `
+        <div class="msg player">
+          <div class="bubble">我去查相册和旧码头。</div>
+          <div class="msg-time">已发送</div>
+        </div>
+      ` : "";
+
+      appBody.innerHTML = `
+        <div class="chat-layout">
+          <div class="contact-card">
+            <div class="avatar">林</div>
+            <div>
+              <b>林夏</b>
+              <span>${state.unlockedVault ? "在线 · 等你做最后决定" : "在线 · 消息已加密"}</span>
+            </div>
+          </div>
+          <div class="messages" id="messages">
+            ${messagesHtml}
+            ${playerReply}
+          </div>
+          <div class="choice-panel">
+            ${chatChoicesHtml()}
+          </div>
+        </div>
+      `;
+
+      $("#messages").scrollTop = $("#messages").scrollHeight;
+    }
+
+    function chatChoicesHtml() {
+      if (state.chatStep < GAME_DATA.chatOpening.length - 1) {
+        return `<button class="choice-btn primary" type="button" data-chat-next>继续听她说</button>`;
+      }
+
+      if (!state.viewedPhoto) {
+        return `
+          <button class="choice-btn" type="button" data-open-app="gallery">打开相册查看“拍坏的码头照片”</button>
+          <button class="choice-btn" type="button" data-chat-reply>回复：我马上去找</button>
+        `;
+      }
+
+      if (!state.unlockedVault) {
+        return `
+          <button class="choice-btn" type="button" data-open-app="browser">搜索“雾港旧码头”</button>
+          <button class="choice-btn" type="button" data-open-app="vault">尝试打开私密箱</button>
+        `;
+      }
+
+      return `<button class="choice-btn primary" type="button" data-open-app="ending">查看结局</button>`;
+    }
+
+    /*
+      =====================
+      六、相册 App
+      =====================
+      点击关键照片后，设置 viewedPhoto=true。
+      这就是最基础的“看过某线索后解锁后续内容”。
+    */
+    function renderGallery() {
+      appBody.innerHTML = `
+        <div class="gallery">
+          <button class="photo-card" type="button" data-photo="pier">
+            <div class="photo-thumb"></div>
+            <div class="photo-label">
+              <span><b>IMG_0717</b><br>曝光失败的码头照片</span>
+              ${state.viewedPhoto ? '<span class="clue-chip">已发现</span>' : '<span class="clue-chip">可疑</span>'}
+            </div>
+          </button>
+          <button class="photo-card" type="button" data-photo="street">
+            <div class="photo-thumb" style="background:linear-gradient(135deg,rgba(255,123,168,.34),rgba(90,140,255,.28)),#262a36"></div>
+            <div class="photo-label">
+              <span><b>IMG_0709</b><br>雨夜街口</span>
+              <span class="clue-chip">普通</span>
+            </div>
+          </button>
+        </div>
+      `;
+    }
+
+    function inspectPhoto(photoId) {
+      if (photoId !== "pier") {
+        appBody.insertAdjacentHTML("afterbegin", `<div class="empty-hint">这张照片没有明显异常。</div>`);
+        return;
+      }
+
+      mark("viewedPhoto");
+      appBody.innerHTML = `
+        <div class="gallery">
+          <div class="photo-card">
+            <div class="photo-thumb"></div>
+            <div class="photo-label">
+              <span><b>IMG_0717</b><br>${GAME_DATA.photoClue}</span>
+              <span class="clue-chip">地点线索</span>
+            </div>
+          </div>
+          <button class="choice-btn primary" type="button" data-open-app="browser">去浏览器搜索“雾港旧码头”</button>
+        </div>
+      `;
+    }
+
+    /*
+      =====================
+      七、文档 App
+      =====================
+      文档提供“密码规则”：重要东西锁进四位日期。
+      与相册中的 7月17日 组合，得到 0717。
+    */
+    function renderDocs() {
+      mark("readDoc");
+      appBody.innerHTML = `
+        <div class="notes-list">
+          <article class="doc-card">
+            <h3>未命名档案.txt</h3>
+            <p>${escapeHtml(GAME_DATA.docText).replaceAll("\n", "<br>")}</p>
+            <div class="doc-meta">最近修改：今天 22:17</div>
+          </article>
+          <article class="doc-card">
+            <h3>购物清单.txt</h3>
+            <p>电池、胶带、一次性雨衣。最后一项被划掉了：旧仓库钥匙。</p>
+            <div class="doc-meta">最近修改：7月16日 19:42</div>
+          </article>
+        </div>
+      `;
+    }
+
+    /*
+      =====================
+      八、浏览器 App
+      =====================
+      搜索关键词命中后才显示关键结果，并记录 searchedPier。
+      这能模拟“玩家主动输入线索”的解谜感。
+    */
+    function renderBrowser() {
+      appBody.innerHTML = `
+        <div class="browser">
+          <div class="search-row">
+            <input id="searchInput" type="search" placeholder="搜索网页或输入网址" value="${state.searchedPier ? "雾港旧码头" : ""}">
+            <button class="small-btn" type="button" id="searchBtn">搜索</button>
+          </div>
+          <div id="searchResults">
+            ${state.searchedPier ? browserResultsHtml() : '<div class="empty-hint">试着搜索你在照片里看到的地点。</div>'}
+          </div>
+        </div>
+      `;
+    }
+
+    function browserResultsHtml() {
+      return GAME_DATA.browserResults.map(item => `
+        <article class="browser-result">
+          <b>${escapeHtml(item.title)}</b>
+          <small>${escapeHtml(item.url)}</small>
+          <p>${escapeHtml(item.text)}</p>
+        </article>
+      `).join("") + `
+        <button class="choice-btn primary" type="button" data-open-app="vault">线索足够了，去试私密箱</button>
+      `;
+    }
+
+    function doSearch() {
+      const keyword = $("#searchInput").value.trim();
+      const matched = keyword.includes("雾港旧码头") || keyword.includes("旧码头") || keyword.includes("0717");
+      if (matched) {
+        mark("searchedPier");
+        $("#searchResults").innerHTML = browserResultsHtml();
+      } else {
+        $("#searchResults").innerHTML = `<div class="empty-hint">没有找到有用结果。也许关键词需要更接近照片上的地点。</div>`;
+      }
+    }
+
+    /*
+      =====================
+      九、社交与视频 App
+      =====================
+      这些 App 在 MVP 中主要用于营造世界感，也可以藏红鲱鱼或支线线索。
+    */
+    function renderSocial() {
+      appBody.innerHTML = `
+        <div class="social-list">
+          <article class="post-card">
+            <h3>林夏</h3>
+            <p>出差三天，勿念。</p>
+            <div class="post-image">定位：雾港中心站</div>
+            <div class="post-meta">今天 21:03 · 这条动态看起来过于整齐</div>
+          </article>
+          <article class="post-card">
+            <h3>阿迟</h3>
+            <p>旧码头今晚怎么又停电？海边那盏红灯一直在闪。</p>
+            <div class="post-meta">今天 22:04 · 来自雾港旧城区</div>
+          </article>
+        </div>
+      `;
+    }
+
+    function renderVideos() {
+      appBody.innerHTML = `
+        <div class="gallery">
+          <article class="video-card">
+            <div class="video-box">
+              <div class="play">▶</div>
+            </div>
+            <div class="photo-label">
+              <span><b>VID_0717</b><br>画面损坏，只能听到海浪和三声敲门。</span>
+              <span class="clue-chip">氛围</span>
+            </div>
+          </article>
+        </div>
+      `;
+    }
+
+    /*
+      =====================
+      十、私密箱与结局
+      =====================
+      密码 0717 来自“7月17日”。
+      解锁后将 ending App 从“未达成”变成真正结局。
+    */
+    function renderVault() {
+      if (state.unlockedVault) {
+        appBody.innerHTML = `
+          <div class="ending">
+            <div class="ending-banner">
+              <div>
+                <h2>私密箱已解锁</h2>
+                <p>里面只有一段坐标和一句话：别来救我，去公开它。</p>
+              </div>
+            </div>
+            <button class="choice-btn primary" type="button" data-open-app="ending">查看当前结局</button>
+          </div>
+        `;
+        return;
+      }
+
+      appBody.innerHTML = `
+        <div class="locked">
+          <div class="lock-icon">锁</div>
+          <h2>需要四位密码</h2>
+          <p>林夏的习惯是把重要东西锁进“日期”。你需要从相册、浏览器和文档里拼出它。</p>
+          <div class="passcode">
+            <input id="passInput" type="password" inputmode="numeric" maxlength="4" placeholder="输入 4 位密码">
+            <button class="small-btn" type="button" id="unlockBtn">解锁</button>
+          </div>
+          <div class="error" id="passError"></div>
+        </div>
+      `;
+    }
+
+    function tryUnlock() {
+      const value = $("#passInput").value.trim();
+      if (value === GAME_DATA.password) {
+        mark("unlockedVault");
+        renderVault();
+      } else {
+        $("#passError").textContent = "密码不对。提示：把月份和日期写成四位数字。";
+      }
+    }
+
+    function renderEnding() {
+      if (!state.unlockedVault) {
+        appBody.innerHTML = `
+          <div class="locked">
+            <div class="lock-icon">？</div>
+            <h2>结局尚未解锁</h2>
+            <p>先打开私密箱。关键线索藏在相册、浏览器搜索和文档里。</p>
+            <button class="choice-btn primary" type="button" data-open-app="chat">回到聊天</button>
+          </div>
+        `;
+        return;
+      }
+
+      state.endingSeen = true;
+      saveState();
+      appBody.innerHTML = `
+        <div class="ending">
+          <div class="ending-banner">
+            <div>
+              <h2>结局 A：公开回声</h2>
+              <p>你没有去旧码头，而是把私密箱里的坐标和档案发给了所有联系人。十七分钟后，雾港的新闻推送同时亮起。</p>
+            </div>
+          </div>
+          <article class="doc-card">
+            <h3>下一版可以扩展什么？</h3>
+            <p>多角色聊天、错误结局、限时通知、伪网页、视频逐帧线索、分支信任度、真实存档菜单、章节编辑器。</p>
+          </article>
+        </div>
+      `;
+    }
+
+    function renderHelp() {
+      appBody.innerHTML = `
+        <div class="help-page">
+          <section class="help-hero">
+            <h2>雾港来信</h2>
+            <p>这是一个最小可玩原型：玩家在模拟手机里翻聊天、相册、文档、朋友圈和浏览器，通过线索找到私密箱密码，再触发结局。</p>
+          </section>
+
+          <section class="help-card">
+            <h3>当前谜题链</h3>
+            <p>聊天提示旧相册 → 相册得到地点 → 浏览器搜索地点 → 文档确认日期 → 输入四位密码。</p>
+          </section>
+
+          <section class="help-card">
+            <h3>解谜进度</h3>
+            <div class="progress-list" id="progressList" aria-label="解谜进度"></div>
+          </section>
+
+          <section class="help-card">
+            <h3>手机密码提示</h3>
+            <p>锁屏密码来自林夏最后同步时间：22:17，写成四位数字。</p>
+          </section>
+
+          <div class="reset-row">
+            <button class="desktop-btn primary" type="button" id="desktopHint">给我一点提示</button>
+            <button class="desktop-btn" type="button" id="resetGame">重置进度</button>
+          </div>
+        </div>
+      `;
+      renderProgress();
+    }
+
+    /*
+      =====================
+      十一、提示、进度、重置
+      =====================
+      这部分不是游戏必需，但很适合原型阶段测试流程是否顺畅。
+    */
+    function currentHint() {
+      if (!state.openedChat) return "先打开“微讯”，读林夏的消息。";
+      if (!state.viewedPhoto) return "去“相册”点开 IMG_0717，那张曝光失败的码头照片。";
+      if (!state.searchedPier) return "去“浏览器”搜索“雾港旧码头”。";
+      if (!state.readDoc) return "打开“文档”，读未命名档案，确认密码规则。";
+      if (!state.unlockedVault) return "私密箱密码是四位日期：7月17日写成 0717。";
+      return "已经解锁私密箱，可以查看结局。";
+    }
+
+    function renderProgress() {
+      const progressList = $("#progressList");
+      if (!progressList) return;
+      progressList.innerHTML = GAME_DATA.progress.map(item => `
+        <div class="progress-item ${state[item.key] ? "done" : ""}">
+          <span class="progress-dot"></span>
+          <span>${escapeHtml(item.text)}</span>
+        </div>
+      `).join("");
+    }
+
+    function updateBadges() {
+      $("#chatBadge").style.display = state.openedChat ? "none" : "grid";
+      $("#noticeText").textContent = state.unlockedVault ? "你已经拿到真正的档案了。" : "我把线索留在旧手机里了。";
+      $("#shadeNoticeText").textContent = state.unlockedVault ? "你已经拿到真正的档案了。" : "我把线索留在旧手机里了。";
+    }
+
+    function resetGame() {
+      localStorage.removeItem(STORAGE_KEY);
+      state = { ...defaultState };
+      renderProgress();
+      updateBadges();
+      closeNotificationShade();
+      initScreen();
+    }
+
+    function tickClock() {
+      const now = new Date();
+      const text = now.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false });
+      $("#clock").textContent = text;
+      $("#homeTime").textContent = text;
+      $("#lockTime").textContent = text;
+      $("#shadeDate").textContent = now.toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" });
+    }
+
+    /*
+      =====================
+      十二、事件委托
+      =====================
+      使用事件委托可以让动态生成的按钮也自动生效。
+      例如 renderChat 重新绘制后，新按钮不需要重新单独绑定事件。
+    */
+    document.addEventListener("click", (event) => {
+      if (event.target.closest("#phoneUnlockBtn")) {
+        unlockPhone();
+        return;
+      }
+
+      if (event.target.closest("#shadeGrip")) {
+        toggleNotificationShade();
+        return;
+      }
+
+      if (event.target.closest("#shadeClose")) {
+        closeNotificationShade();
+        return;
+      }
+
+      if (event.target.closest("[data-lock-open-chat]")) {
+        $("#phonePassInput").focus();
+        $("#phoneLockError").textContent = "先解锁手机。提示：最后同步时间是 22:17。";
+        return;
+      }
+
+      if (event.target.closest("#desktopHint")) {
+        alert(currentHint());
+        return;
+      }
+
+      if (event.target.closest("#resetGame")) {
+        resetGame();
+        return;
+      }
+
+      const openButton = event.target.closest("[data-open-app]");
+      if (openButton) {
+        openApp(openButton.dataset.openApp);
+        return;
+      }
+
+      if (event.target.closest("[data-chat-next]")) {
+        state.chatStep += 1;
+        saveState();
+        renderChat();
+        return;
+      }
+
+      if (event.target.closest("[data-chat-reply]")) {
+        state.chatStep = GAME_DATA.chatOpening.length;
+        saveState();
+        renderChat();
+        return;
+      }
+
+      const photoButton = event.target.closest("[data-photo]");
+      if (photoButton) {
+        inspectPhoto(photoButton.dataset.photo);
+      }
+    });
+
+    $("#backBtn").addEventListener("click", goHome);
+    $("#homeBtn").addEventListener("click", goHome);
+    $("#hintBtn").addEventListener("click", () => alert(currentHint()));
+
+    appBody.addEventListener("click", (event) => {
+      if (event.target.id === "searchBtn") doSearch();
+      if (event.target.id === "unlockBtn") tryUnlock();
+    });
+
+    appBody.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && event.target.id === "searchInput") doSearch();
+      if (event.key === "Enter" && event.target.id === "passInput") tryUnlock();
+    });
+
+    $("#phonePassInput").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") unlockPhone();
+    });
+
+    /*
+      =====================
+      十三、手机手势
+      =====================
+      这里不是完整的系统级手势，只模拟玩家最常用的“顶部下拉通知栏”。
+      使用 Pointer Events 可以同时兼容鼠标拖拽和手机触控。
+    */
+    let pointerStartY = null;
+    $(".phone").addEventListener("pointerdown", (event) => {
+      const isTopArea = event.clientY - $(".phone").getBoundingClientRect().top < 76;
+      const shadeOpen = notificationShade.classList.contains("open");
+      if (isTopArea || shadeOpen) pointerStartY = event.clientY;
+    });
+
+    $(".phone").addEventListener("pointerup", (event) => {
+      if (pointerStartY === null) return;
+      const deltaY = event.clientY - pointerStartY;
+      pointerStartY = null;
+
+      if (deltaY > 42) toggleNotificationShade(true);
+      if (deltaY < -36) closeNotificationShade();
+    });
+
+    tickClock();
+    setInterval(tickClock, 1000 * 20);
+    initScreen();
+    renderProgress();
+    updateBadges();
+  </script>
+</body>
+</html>
