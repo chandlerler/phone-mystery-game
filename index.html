@@ -12,8 +12,8 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <!-- 头像是首屏锁屏通知的一部分，提前加载可以减少图片闪现。 -->
-  <link rel="preload" as="image" href="assets/lin-xia-avatar.jpg">
-  <title>雾港来信 - 手机解谜 MVP</title>
+  <link rel="preload" as="image" href="assets/avatars/linxia.jpg">
+  <title>雾港来信：回声盲区</title>
   <style>
     /*
       这个文件是一个“最小可玩模型”：
@@ -848,6 +848,22 @@
       line-height: 1.45;
     }
 
+    /* 通知正文允许在弹性布局中收缩，避免长剧情消息把手机界面撑出屏幕。 */
+    .notice > span:last-child,
+    .shade-card > span:last-child,
+    .lock-notice > span:last-child {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .notice > span:last-child > span,
+    .shade-card > span:last-child > span {
+      display: block;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
     .shade-close {
       width: 118px;
       height: 5px;
@@ -869,6 +885,7 @@
 
     .app-title {
       display: flex;
+      min-width: 0;
       align-items: center;
       justify-content: center;
       gap: 7px;
@@ -901,9 +918,11 @@
     }
 
     .small-btn {
-      padding: 0 12px;
+      width: 42px;
+      padding: 0;
       color: var(--muted);
       font-size: 12px;
+      white-space: nowrap;
     }
 
     .app-body {
@@ -1538,6 +1557,552 @@
         font-size: 44px;
       }
     }
+
+    /* ========================================================
+       v1.04 多人物剧情系统
+       这些样式服务于联系人、证据照片、关系值和多结局界面。
+       ======================================================== */
+    .messenger-shell {
+      height: 100%;
+      overflow: auto;
+      background: #11141b;
+    }
+
+    .messenger-summary {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .025);
+    }
+
+    .messenger-summary div {
+      min-width: 0;
+      padding: 12px 14px;
+    }
+
+    .messenger-summary div + div {
+      border-left: 1px solid var(--line);
+    }
+
+    .messenger-summary span,
+    .messenger-summary b {
+      display: block;
+    }
+
+    .messenger-summary span {
+      color: var(--dim);
+      font-size: 11px;
+    }
+
+    .messenger-summary b {
+      margin-top: 2px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .contact-list {
+      display: grid;
+    }
+
+    .contact-row {
+      width: 100%;
+      min-height: 78px;
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 11px;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--line);
+      color: var(--text);
+      text-align: left;
+      background: transparent;
+    }
+
+    .contact-row:active {
+      background: rgba(255, 255, 255, .065);
+    }
+
+    .contact-row-avatar {
+      width: 48px;
+      height: 48px;
+      flex: 0 0 48px;
+    }
+
+    .contact-row-copy,
+    .contact-row-top {
+      min-width: 0;
+      display: block;
+    }
+
+    .contact-row-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .contact-row-top b {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .contact-row-top small,
+    .contact-role,
+    .contact-preview {
+      color: var(--dim);
+      font-size: 11px;
+    }
+
+    .contact-role,
+    .contact-preview {
+      display: block;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .contact-role {
+      margin-top: 2px;
+      color: var(--muted);
+    }
+
+    .contact-preview {
+      margin-top: 3px;
+    }
+
+    .contact-unread {
+      min-width: 20px;
+      height: 20px;
+      padding: 0 5px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--green);
+      color: #06120c;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .thread-back {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .07);
+      color: var(--text);
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .contact-card-copy {
+      min-width: 0;
+    }
+
+    .quiet-state {
+      color: var(--dim);
+      font-size: 11px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .evidence-card,
+    .clue-button,
+    .social-post,
+    .media-video {
+      width: 100%;
+      color: var(--text);
+      text-align: left;
+    }
+
+    .evidence-thumb {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      display: block;
+      object-fit: cover;
+    }
+
+    .clue-detail {
+      min-height: 100%;
+      padding-bottom: 16px;
+      overflow: auto;
+      background: #11141b;
+    }
+
+    .evidence-hero {
+      width: 100%;
+      max-height: 310px;
+      display: block;
+      object-fit: cover;
+    }
+
+    .clue-detail-copy {
+      padding: 16px;
+    }
+
+    .clue-detail-copy h2,
+    .document-title h2 {
+      margin: 8px 0;
+      font-size: 19px;
+      font-weight: 500;
+    }
+
+    .clue-detail-copy p,
+    .document-reader p,
+    .key-vault p,
+    .ending-detail {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.75;
+    }
+
+    .clue-detail > .choice-btn,
+    .document-reader > .choice-btn {
+      width: calc(100% - 32px);
+      margin: 0 16px;
+    }
+
+    .clue-button {
+      min-height: 64px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .clue-button b,
+    .clue-button small {
+      display: block;
+    }
+
+    .clue-button b {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .clue-button small {
+      margin-top: 4px;
+      color: var(--dim);
+      font-size: 11px;
+    }
+
+    .document-reader {
+      min-height: 100%;
+      padding: 18px 16px;
+      overflow: auto;
+      background: #161922;
+    }
+
+    .document-title {
+      padding-bottom: 14px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .document-title span,
+    .document-title small {
+      color: var(--dim);
+      font-size: 11px;
+    }
+
+    .document-reader > p {
+      min-height: 260px;
+      color: rgba(245, 246, 250, .82);
+    }
+
+    .social-post {
+      padding: 14px;
+    }
+
+    .post-author > span {
+      min-width: 0;
+    }
+
+    .post-author b,
+    .post-author small,
+    .post-copy,
+    .social-post .post-meta {
+      display: block;
+    }
+
+    .post-author b {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .post-author small {
+      margin-top: 2px;
+      color: var(--dim);
+      font-size: 11px;
+    }
+
+    .post-copy {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .social-post .post-image {
+      min-height: 72px;
+      margin: 12px 0 0;
+      border-radius: 6px;
+      background: linear-gradient(135deg, rgba(90, 140, 255, .2), rgba(255, 204, 102, .13)), #20242d;
+    }
+
+    .video-poster {
+      position: relative;
+      aspect-ratio: 16 / 10;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: #090b0f;
+    }
+
+    .video-poster img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      opacity: .74;
+    }
+
+    .video-poster .play,
+    .video-poster small,
+    .audio-wave {
+      position: absolute;
+      z-index: 1;
+    }
+
+    .video-poster .play {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(10, 12, 17, .68);
+      backdrop-filter: blur(8px);
+    }
+
+    .video-poster small {
+      right: 10px;
+      bottom: 8px;
+      padding: 3px 6px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, .64);
+      color: white;
+      font-size: 10px;
+    }
+
+    .video-poster.large {
+      aspect-ratio: 4 / 3;
+    }
+
+    .audio-wave {
+      color: white;
+      font-size: 28px;
+      letter-spacing: 0;
+      text-shadow: 0 3px 15px black;
+    }
+
+    .puzzle-panel input {
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .key-vault {
+      padding: 24px 18px;
+    }
+
+    .key-chip {
+      min-height: 160px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 1px solid rgba(255, 204, 102, .35);
+      border-radius: 8px;
+      background: linear-gradient(145deg, rgba(255, 204, 102, .16), rgba(110, 214, 255, .1)), #171a20;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04);
+    }
+
+    .key-chip span,
+    .key-chip small {
+      color: var(--dim);
+      font-size: 10px;
+    }
+
+    .key-chip b {
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    .key-vault p {
+      margin: 18px 0;
+    }
+
+    .help-page {
+      min-height: 100%;
+      padding-bottom: 18px;
+      overflow: auto;
+      background: #11141b;
+    }
+
+    .help-band {
+      padding: 18px 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(110, 214, 255, .055);
+    }
+
+    .help-band span,
+    .help-band b {
+      display: block;
+    }
+
+    .help-band span {
+      color: var(--dim);
+      font-size: 11px;
+    }
+
+    .help-band b {
+      margin: 4px 0;
+      font-size: 25px;
+      font-weight: 500;
+    }
+
+    .help-band p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .help-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .help-section h3 {
+      margin: 0 0 12px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .trust-row {
+      display: grid;
+      grid-template-columns: 34px 76px minmax(0, 1fr);
+      align-items: center;
+      gap: 9px;
+      min-height: 44px;
+    }
+
+    .trust-row img {
+      width: 34px;
+      height: 34px;
+    }
+
+    .trust-row b,
+    .trust-row small {
+      display: block;
+    }
+
+    .trust-row b {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .trust-row small {
+      color: var(--dim);
+      font-size: 10px;
+    }
+
+    .trust-row i {
+      height: 4px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .trust-row em {
+      height: 100%;
+      display: block;
+      border-radius: inherit;
+    }
+
+    .progress-item b,
+    .progress-item small {
+      display: block;
+    }
+
+    .progress-item b {
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .progress-item small {
+      margin-top: 2px;
+      color: var(--dim);
+      font-size: 10px;
+    }
+
+    .danger-choice {
+      margin-top: 8px;
+      color: #ff9aa4;
+    }
+
+    .final-ending,
+    .locked-ending {
+      min-height: 100%;
+      padding: 28px 18px;
+      overflow: auto;
+      text-align: left;
+    }
+
+    .ending-kicker {
+      color: var(--cyan);
+      font-size: 10px;
+      letter-spacing: .16em;
+    }
+
+    .final-ending h2,
+    .locked-ending h2 {
+      margin: 12px 0;
+      font-size: 27px;
+      font-weight: 500;
+    }
+
+    .ending-summary {
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .ending-detail {
+      padding: 14px 0;
+      margin: 14px 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .ending-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      margin-bottom: 18px;
+    }
+
+    .ending-stats span {
+      color: var(--dim);
+      font-size: 10px;
+    }
+
+    .ending-stats b {
+      display: block;
+      margin-top: 3px;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 500;
+    }
   </style>
 </head>
 <body>
@@ -1600,7 +2165,7 @@
           <div class="menu-heading">
             <div class="menu-kicker">INTERACTIVE MYSTERY</div>
             <h1 class="menu-title">雾港来信</h1>
-            <p class="menu-subtitle">一部藏在旧手机里的失踪谜案。每条消息，都可能是她留下的证词。</p>
+            <p class="menu-subtitle">救人、真相、司法与隐私，没有一个选择完全干净。</p>
             <div class="menu-mark" aria-hidden="true"></div>
           </div>
 
@@ -1625,7 +2190,7 @@
 
           <footer class="menu-footer">
             <span>制作者 · chandlerler</span>
-            <span id="menuVersion">v1.03</span>
+            <span id="menuVersion">v1.04</span>
           </footer>
         </section>
 
@@ -1648,10 +2213,10 @@
               <div class="lock-time" id="lockTime">22:17</div>
               <div class="lock-date">7月17日 周五 · 雾港市</div>
               <button class="lock-notice" type="button" data-lock-open-chat>
-                <img class="notice-icon character-avatar" src="assets/lin-xia-avatar.jpg" alt="林夏">
+                <img class="notice-icon character-avatar" src="assets/avatars/linxia.jpg" alt="林夏">
                 <span>
                   <b>林夏</b>
-                  <span>我把线索留在旧手机里了。先解锁。</span>
+                  <span>别急着相信任何人，包括我。先解锁。</span>
                 </span>
               </button>
             </div>
@@ -1679,10 +2244,10 @@
               <button class="quick-toggle" type="button">电量<br>72%</button>
             </div>
             <button class="shade-card" type="button" data-open-app="chat">
-              <img class="notice-icon character-avatar" src="assets/lin-xia-avatar.jpg" alt="">
+              <img class="notice-icon character-avatar" src="assets/avatars/linxia.jpg" alt="">
               <span>
                 <b>微讯 · 林夏</b>
-                <span id="shadeNoticeText">我把线索留在旧手机里了。</span>
+                <span id="shadeNoticeText">旧手机里留下了新的调查线索。</span>
               </span>
             </button>
             <button class="shade-card" type="button" data-open-app="help">
@@ -1704,10 +2269,10 @@
             </div>
 
             <button class="notice" type="button" data-open-app="chat">
-              <img class="notice-icon character-avatar" src="assets/lin-xia-avatar.jpg" alt="">
+              <img class="notice-icon character-avatar" src="assets/avatars/linxia.jpg" alt="">
               <span>
                 <b>林夏</b>
-                <span id="noticeText">我把线索留在旧手机里了。</span>
+                <span id="noticeText">旧手机里留下了新的调查线索。</span>
               </span>
             </button>
 
@@ -1753,19 +2318,19 @@
                 <span class="icon-tile" style="background:linear-gradient(135deg,#4f5360,#16181e)">
                   <svg class="app-logo-svg logo-vault" aria-hidden="true"><use href="#logo-vault"></use></svg>
                 </span>
-                <span>私密箱</span>
+                <span>密钥库</span>
               </button>
               <button class="app-icon" type="button" data-open-app="ending">
                 <span class="icon-tile" style="background:linear-gradient(135deg,#ff9d66,#a23a54)">
                   <svg class="app-logo-svg logo-ending" aria-hidden="true"><use href="#logo-ending"></use></svg>
                 </span>
-                <span>结局</span>
+                <span>抉择</span>
               </button>
               <button class="app-icon" type="button" data-open-app="help">
                 <span class="icon-tile" style="background:linear-gradient(135deg,#42d6c4,#4d7ff2)">
                   <svg class="app-logo-svg logo-help" aria-hidden="true"><use href="#logo-help"></use></svg>
                 </span>
-                <span>帮助</span>
+                <span>调查簿</span>
               </button>
             </div>
 
@@ -1814,887 +2379,11 @@
     </section>
   </main>
 
-  <script>
-    /*
-      =====================
-      一、内容与谜题数据
-      =====================
-      这里是原型最重要的“内容层”。
-      正式项目中建议把这些数据拆到 data/*.json，让编剧可以只改文本，不碰逻辑代码。
-    */
-    /*
-      每次发布功能更新时，将 GAME_VERSION 增加 0.01，并同步记录到 CHANGELOG.md。
-      版本号放在脚本常量中，后续可以在菜单、帮助页或存档信息里统一复用。
-    */
-    const GAME_VERSION = "1.03";
-    const GAME_CREATOR = "chandlerler";
-
-    const GAME_DATA = {
-      phonePassword: "2217",
-      password: "0717",
-      apps: {
-        chat: "微讯",
-        gallery: "相册",
-        docs: "文档",
-        browser: "浏览器",
-        social: "朋友圈",
-        videos: "视频",
-        vault: "私密箱",
-        ending: "结局",
-        help: "帮助"
-      },
-      progress: [
-        { key: "openedChat", text: "读过林夏的第一条消息" },
-        { key: "viewedPhoto", text: "在旧相册里发现码头照片" },
-        { key: "searchedPier", text: "搜索过“雾港旧码头”" },
-        { key: "readDoc", text: "读过未命名档案" },
-        { key: "unlockedVault", text: "打开私密箱" }
-      ],
-      chatOpening: [
-        "你终于上线了。",
-        "别相信朋友圈里那条“出差”的动态。",
-        "我把真正的线索留在旧手机里：先看相册，找一张拍坏的码头照片。"
-      ],
-      photoClue: "照片背面有一行小字：雾港旧码头，7月17日，别迟到。",
-      docText: "未命名档案\n\n项目代号：回声。\n最后同步时间：07/17 22:17。\n备注：林夏只会把重要东西锁进四位日期里。",
-      browserResults: [
-        {
-          title: "雾港旧码头停运公告",
-          url: "local.search/wugang-pier",
-          text: "旧码头在 7 月 17 日晚出现短暂停电，监控记录缺失 17 分钟。"
-        },
-        {
-          title: "本地论坛：有人听见回声吗？",
-          url: "local.search/forum-echo",
-          text: "匿名用户提到“回声计划”的交接地点可能就在旧码头仓库。"
-        }
-      ]
-    };
-
-    /*
-      =====================
-      二、游戏状态
-      =====================
-      state 记录玩家已经看过哪些线索、是否解锁结局等。
-      localStorage 负责自动存档：刷新页面后仍然保留进度。
-    */
-    const defaultState = {
-      phoneUnlocked: false,
-      openedChat: false,
-      viewedPhoto: false,
-      searchedPier: false,
-      readDoc: false,
-      unlockedVault: false,
-      endingSeen: false,
-      chatStep: 0,
-      activeApp: null
-    };
-
-    const STORAGE_KEY = "fogport-phone-mystery-mvp";
-    const SAVE_META_KEY = "fogport-phone-mystery-save-meta";
-    let state = loadState();
-    let gameSessionStarted = false;
-
-    function loadState() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return { ...defaultState };
-      try {
-        return { ...defaultState, ...JSON.parse(saved) };
-      } catch {
-        return { ...defaultState };
-      }
-    }
-
-    function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      localStorage.setItem(SAVE_META_KEY, JSON.stringify({
-        savedAt: new Date().toISOString(),
-        version: GAME_VERSION
-      }));
-      renderProgress();
-      updateBadges();
-      updateStartMenu();
-    }
-
-    /* 旧版本没有单独的存档信息；读取失败时返回 null，不影响旧进度兼容。 */
-    function readSaveMeta() {
-      try {
-        const value = localStorage.getItem(SAVE_META_KEY);
-        return value ? JSON.parse(value) : null;
-      } catch {
-        return null;
-      }
-    }
-
-    /*
-      =====================
-      三、基础 DOM 工具
-      =====================
-      小项目可以直接操作 DOM；后续变复杂后，可以迁移成 React/Vue 的组件状态。
-    */
-    const $ = (selector) => document.querySelector(selector);
-    const appBody = $("#appBody");
-    const appTitle = $("#appTitle");
-    const lockScreen = $("#lockScreen");
-    const homeScreen = $("#homeScreen");
-    const appScreen = $("#appScreen");
-    const notificationShade = $("#notificationShade");
-    const startMenu = $("#startMenu");
-    const loadGameBtn = $("#loadGameBtn");
-    const saveGameBtn = $("#saveGameBtn");
-    const menuCloseBtn = $("#menuCloseBtn");
-    const saveSummary = $("#saveSummary");
-
-    function escapeHtml(text) {
-      return String(text)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    /* 根据应用名生成统一 Logo；className 用于区分桌面、通知和标题栏尺寸。 */
-    function appLogoMarkup(appName, className = "app-logo-svg") {
-      const safeAppName = Object.prototype.hasOwnProperty.call(GAME_DATA.apps, appName) ? appName : "help";
-      return `<svg class="${className} logo-${safeAppName}" aria-hidden="true"><use href="#logo-${safeAppName}"></use></svg>`;
-    }
-
-    function mark(key) {
-      state[key] = true;
-      saveState();
-    }
-
-    function showToast(title, text) {
-      const oldToast = $(".toast");
-      if (oldToast) oldToast.remove();
-      const toast = document.createElement("div");
-      toast.className = "toast";
-      toast.innerHTML = `
-        <span class="notice-icon">${appLogoMarkup("chat")}</span>
-        <span>
-          <b>${escapeHtml(title)}</b>
-          <span>${escapeHtml(text)}</span>
-        </span>
-      `;
-      $(".phone").appendChild(toast);
-      setTimeout(() => toast.remove(), 3300);
-    }
-
-    /*
-      =====================
-      四、主菜单与手动存档
-      =====================
-      游戏过程仍然自动保存；菜单中的“保存游戏”提供一个明确的手动保存动作。
-      “读取游戏”会恢复上次所在应用，旧版存档缺少元数据时也可以继续读取。
-    */
-    function hasStoredSave() {
-      try {
-        return Boolean(localStorage.getItem(STORAGE_KEY));
-      } catch {
-        return false;
-      }
-    }
-
-    function formatSaveTime(isoText) {
-      if (!isoText) return "发现旧版存档，可以继续读取";
-      const date = new Date(isoText);
-      if (Number.isNaN(date.getTime())) return "已有本地存档";
-      return `上次保存：${date.toLocaleString("zh-CN", {
-        month: "numeric",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false
-      })}`;
-    }
-
-    function updateStartMenu(message = "", success = false) {
-      const hasSave = hasStoredSave();
-      const meta = readSaveMeta();
-
-      loadGameBtn.disabled = !hasSave;
-      saveGameBtn.disabled = !gameSessionStarted;
-      menuCloseBtn.classList.toggle("visible", gameSessionStarted);
-      $("#menuVersion").textContent = `v${GAME_VERSION}`;
-
-      saveSummary.classList.toggle("success", success);
-      if (message) {
-        saveSummary.textContent = message;
-      } else if (hasSave) {
-        saveSummary.textContent = `${formatSaveTime(meta?.savedAt)} · v${meta?.version || "1.00"}`;
-      } else {
-        saveSummary.textContent = "暂无存档，开始游戏后将自动保存";
-      }
-    }
-
-    function openStartMenu() {
-      closeNotificationShade();
-      startMenu.classList.add("active");
-      startMenu.setAttribute("aria-hidden", "false");
-      updateStartMenu();
-    }
-
-    function closeStartMenu() {
-      if (!gameSessionStarted) return;
-      startMenu.classList.remove("active");
-      startMenu.setAttribute("aria-hidden", "true");
-    }
-
-    function startNewGame() {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(SAVE_META_KEY);
-      state = { ...defaultState };
-      gameSessionStarted = true;
-      saveState();
-      initScreen();
-      closeStartMenu();
-      $("#phonePassInput").value = "";
-      $("#phoneLockError").textContent = "";
-    }
-
-    function loadSavedGame() {
-      if (!hasStoredSave()) {
-        updateStartMenu("没有找到可读取的本地存档");
-        return;
-      }
-
-      state = loadState();
-      gameSessionStarted = true;
-      closeStartMenu();
-
-      if (!state.phoneUnlocked) {
-        initScreen();
-      } else if (state.activeApp) {
-        openApp(state.activeApp);
-      } else {
-        goHome();
-      }
-    }
-
-    function manuallySaveGame() {
-      if (!gameSessionStarted) return;
-      saveState();
-      updateStartMenu("当前进度已保存", true);
-    }
-
-    /*
-      =====================
-      五、导航系统
-      =====================
-      openApp 根据 app 名称渲染不同模拟应用。
-      每个 App 都是一个 renderXxx 函数，这样后续添加“邮箱”“短信”“地图”会很直观。
-    */
-    function openApp(appName) {
-      if (!state.phoneUnlocked) {
-        $("#phoneLockError").textContent = "先解锁手机。提示：最后同步时间是 22:17。";
-        $("#phonePassInput").focus();
-        return;
-      }
-
-      state.activeApp = appName;
-      closeNotificationShade();
-      lockScreen.classList.remove("active");
-      homeScreen.classList.remove("active");
-      appScreen.classList.add("active");
-      appTitle.innerHTML = `${appLogoMarkup(appName, "app-header-logo")}<span>${escapeHtml(GAME_DATA.apps[appName] || "应用")}</span>`;
-
-      const renderMap = {
-        chat: renderChat,
-        gallery: renderGallery,
-        docs: renderDocs,
-        browser: renderBrowser,
-        social: renderSocial,
-        videos: renderVideos,
-        vault: renderVault,
-        ending: renderEnding,
-        help: renderHelp
-      };
-
-      renderMap[appName]();
-      saveState();
-    }
-
-    function goHome() {
-      state.activeApp = null;
-      closeNotificationShade();
-      lockScreen.classList.remove("active");
-      appScreen.classList.remove("active");
-      homeScreen.classList.add("active");
-      saveState();
-    }
-
-    function initScreen() {
-      if (state.phoneUnlocked) {
-        lockScreen.classList.remove("active");
-        homeScreen.classList.add("active");
-      } else {
-        lockScreen.classList.add("active");
-        homeScreen.classList.remove("active");
-        appScreen.classList.remove("active");
-      }
-    }
-
-    function unlockPhone() {
-      const value = $("#phonePassInput").value.trim();
-      if (value === GAME_DATA.phonePassword) {
-        state.phoneUnlocked = true;
-        saveState();
-        $("#phoneLockError").textContent = "";
-        goHome();
-        showToast("微讯 · 林夏", "你终于上线了。");
-      } else {
-        $("#phoneLockError").textContent = "手机密码不对。提示：林夏最后同步的时间。";
-        $("#phonePassInput").select();
-      }
-    }
-
-    function toggleNotificationShade(forceOpen) {
-      if (!state.phoneUnlocked) {
-        $("#phoneLockError").textContent = "通知栏已锁定，先输入手机密码。";
-        return;
-      }
-      const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !notificationShade.classList.contains("open");
-      notificationShade.classList.toggle("open", shouldOpen);
-      notificationShade.setAttribute("aria-hidden", String(!shouldOpen));
-    }
-
-    function closeNotificationShade() {
-      notificationShade.classList.remove("open");
-      notificationShade.setAttribute("aria-hidden", "true");
-    }
-
-    /*
-      =====================
-      五、聊天 App
-      =====================
-      这个 MVP 用“点击选项推进剧情”的方式模拟聊天。
-      你以后可以把 choice 变成多分支，并让不同选择影响角色信任度。
-    */
-    function renderChat() {
-      mark("openedChat");
-
-      const visibleMessages = GAME_DATA.chatOpening.slice(0, Math.max(1, state.chatStep + 1));
-      const messagesHtml = visibleMessages.map((text, index) => `
-        <div class="msg npc">
-          <div class="msg-row">
-            <img class="msg-avatar character-avatar" src="assets/lin-xia-avatar.jpg" alt="">
-            <div class="bubble">${escapeHtml(text)}</div>
-          </div>
-          <div class="msg-time">${index === 0 ? "22:17" : "刚刚"}</div>
-        </div>
-      `).join("");
-
-      const playerReply = state.chatStep >= 3 ? `
-        <div class="msg player">
-          <div class="bubble">我去查相册和旧码头。</div>
-          <div class="msg-time">已发送</div>
-        </div>
-      ` : "";
-
-      appBody.innerHTML = `
-        <div class="chat-layout">
-          <div class="contact-card">
-            <img class="avatar character-avatar" src="assets/lin-xia-avatar.jpg" alt="林夏">
-            <div>
-              <b>林夏</b>
-              <span>${state.unlockedVault ? "在线 · 等你做最后决定" : "在线 · 消息已加密"}</span>
-            </div>
-          </div>
-          <div class="messages" id="messages">
-            ${messagesHtml}
-            ${playerReply}
-          </div>
-          <div class="choice-panel">
-            ${chatChoicesHtml()}
-          </div>
-        </div>
-      `;
-
-      $("#messages").scrollTop = $("#messages").scrollHeight;
-    }
-
-    function chatChoicesHtml() {
-      if (state.chatStep < GAME_DATA.chatOpening.length - 1) {
-        return `<button class="choice-btn primary" type="button" data-chat-next>继续听她说</button>`;
-      }
-
-      if (!state.viewedPhoto) {
-        return `
-          <button class="choice-btn" type="button" data-open-app="gallery">打开相册查看“拍坏的码头照片”</button>
-          <button class="choice-btn" type="button" data-chat-reply>回复：我马上去找</button>
-        `;
-      }
-
-      if (!state.unlockedVault) {
-        return `
-          <button class="choice-btn" type="button" data-open-app="browser">搜索“雾港旧码头”</button>
-          <button class="choice-btn" type="button" data-open-app="vault">尝试打开私密箱</button>
-        `;
-      }
-
-      return `<button class="choice-btn primary" type="button" data-open-app="ending">查看结局</button>`;
-    }
-
-    /*
-      =====================
-      六、相册 App
-      =====================
-      点击关键照片后，设置 viewedPhoto=true。
-      这就是最基础的“看过某线索后解锁后续内容”。
-    */
-    function renderGallery() {
-      appBody.innerHTML = `
-        <div class="gallery">
-          <button class="photo-card" type="button" data-photo="pier">
-            <div class="photo-thumb"></div>
-            <div class="photo-label">
-              <span><b>IMG_0717</b><br>曝光失败的码头照片</span>
-              ${state.viewedPhoto ? '<span class="clue-chip">已发现</span>' : '<span class="clue-chip">可疑</span>'}
-            </div>
-          </button>
-          <button class="photo-card" type="button" data-photo="street">
-            <div class="photo-thumb" style="background:linear-gradient(135deg,rgba(255,123,168,.34),rgba(90,140,255,.28)),#262a36"></div>
-            <div class="photo-label">
-              <span><b>IMG_0709</b><br>雨夜街口</span>
-              <span class="clue-chip">普通</span>
-            </div>
-          </button>
-        </div>
-      `;
-    }
-
-    function inspectPhoto(photoId) {
-      if (photoId !== "pier") {
-        appBody.insertAdjacentHTML("afterbegin", `<div class="empty-hint">这张照片没有明显异常。</div>`);
-        return;
-      }
-
-      mark("viewedPhoto");
-      appBody.innerHTML = `
-        <div class="gallery">
-          <div class="photo-card">
-            <div class="photo-thumb"></div>
-            <div class="photo-label">
-              <span><b>IMG_0717</b><br>${GAME_DATA.photoClue}</span>
-              <span class="clue-chip">地点线索</span>
-            </div>
-          </div>
-          <button class="choice-btn primary" type="button" data-open-app="browser">去浏览器搜索“雾港旧码头”</button>
-        </div>
-      `;
-    }
-
-    /*
-      =====================
-      七、文档 App
-      =====================
-      文档提供“密码规则”：重要东西锁进四位日期。
-      与相册中的 7月17日 组合，得到 0717。
-    */
-    function renderDocs() {
-      mark("readDoc");
-      appBody.innerHTML = `
-        <div class="notes-list">
-          <article class="doc-card">
-            <h3>未命名档案.txt</h3>
-            <p>${escapeHtml(GAME_DATA.docText).replaceAll("\n", "<br>")}</p>
-            <div class="doc-meta">最近修改：今天 22:17</div>
-          </article>
-          <article class="doc-card">
-            <h3>购物清单.txt</h3>
-            <p>电池、胶带、一次性雨衣。最后一项被划掉了：旧仓库钥匙。</p>
-            <div class="doc-meta">最近修改：7月16日 19:42</div>
-          </article>
-        </div>
-      `;
-    }
-
-    /*
-      =====================
-      八、浏览器 App
-      =====================
-      搜索关键词命中后才显示关键结果，并记录 searchedPier。
-      这能模拟“玩家主动输入线索”的解谜感。
-    */
-    function renderBrowser() {
-      appBody.innerHTML = `
-        <div class="browser">
-          <div class="search-row">
-            <input id="searchInput" type="search" placeholder="搜索网页或输入网址" value="${state.searchedPier ? "雾港旧码头" : ""}">
-            <button class="small-btn" type="button" id="searchBtn">搜索</button>
-          </div>
-          <div id="searchResults">
-            ${state.searchedPier ? browserResultsHtml() : '<div class="empty-hint">试着搜索你在照片里看到的地点。</div>'}
-          </div>
-        </div>
-      `;
-    }
-
-    function browserResultsHtml() {
-      return GAME_DATA.browserResults.map(item => `
-        <article class="browser-result">
-          <b>${escapeHtml(item.title)}</b>
-          <small>${escapeHtml(item.url)}</small>
-          <p>${escapeHtml(item.text)}</p>
-        </article>
-      `).join("") + `
-        <button class="choice-btn primary" type="button" data-open-app="vault">线索足够了，去试私密箱</button>
-      `;
-    }
-
-    function doSearch() {
-      const keyword = $("#searchInput").value.trim();
-      const matched = keyword.includes("雾港旧码头") || keyword.includes("旧码头") || keyword.includes("0717");
-      if (matched) {
-        mark("searchedPier");
-        $("#searchResults").innerHTML = browserResultsHtml();
-      } else {
-        $("#searchResults").innerHTML = `<div class="empty-hint">没有找到有用结果。也许关键词需要更接近照片上的地点。</div>`;
-      }
-    }
-
-    /*
-      =====================
-      九、社交与视频 App
-      =====================
-      这些 App 在 MVP 中主要用于营造世界感，也可以藏红鲱鱼或支线线索。
-    */
-    function renderSocial() {
-      appBody.innerHTML = `
-        <div class="social-list">
-          <article class="post-card">
-            <div class="post-author">
-              <img class="character-avatar" src="assets/lin-xia-avatar.jpg" alt="林夏">
-              <h3>林夏</h3>
-            </div>
-            <p>出差三天，勿念。</p>
-            <div class="post-image">定位：雾港中心站</div>
-            <div class="post-meta">今天 21:03 · 这条动态看起来过于整齐</div>
-          </article>
-          <article class="post-card">
-            <h3>阿迟</h3>
-            <p>旧码头今晚怎么又停电？海边那盏红灯一直在闪。</p>
-            <div class="post-meta">今天 22:04 · 来自雾港旧城区</div>
-          </article>
-        </div>
-      `;
-    }
-
-    function renderVideos() {
-      appBody.innerHTML = `
-        <div class="gallery">
-          <article class="video-card">
-            <div class="video-box">
-              <div class="play">▶</div>
-            </div>
-            <div class="photo-label">
-              <span><b>VID_0717</b><br>画面损坏，只能听到海浪和三声敲门。</span>
-              <span class="clue-chip">氛围</span>
-            </div>
-          </article>
-        </div>
-      `;
-    }
-
-    /*
-      =====================
-      十、私密箱与结局
-      =====================
-      密码 0717 来自“7月17日”。
-      解锁后将 ending App 从“未达成”变成真正结局。
-    */
-    function renderVault() {
-      if (state.unlockedVault) {
-        appBody.innerHTML = `
-          <div class="ending">
-            <div class="ending-banner">
-              <div>
-                <h2>私密箱已解锁</h2>
-                <p>里面只有一段坐标和一句话：别来救我，去公开它。</p>
-              </div>
-            </div>
-            <button class="choice-btn primary" type="button" data-open-app="ending">查看当前结局</button>
-          </div>
-        `;
-        return;
-      }
-
-      appBody.innerHTML = `
-        <div class="locked">
-          <div class="lock-icon">锁</div>
-          <h2>需要四位密码</h2>
-          <p>林夏的习惯是把重要东西锁进“日期”。你需要从相册、浏览器和文档里拼出它。</p>
-          <div class="passcode">
-            <input id="passInput" type="password" inputmode="numeric" maxlength="4" placeholder="输入 4 位密码">
-            <button class="small-btn" type="button" id="unlockBtn">解锁</button>
-          </div>
-          <div class="error" id="passError"></div>
-        </div>
-      `;
-    }
-
-    function tryUnlock() {
-      const value = $("#passInput").value.trim();
-      if (value === GAME_DATA.password) {
-        mark("unlockedVault");
-        renderVault();
-      } else {
-        $("#passError").textContent = "密码不对。提示：把月份和日期写成四位数字。";
-      }
-    }
-
-    function renderEnding() {
-      if (!state.unlockedVault) {
-        appBody.innerHTML = `
-          <div class="locked">
-            <div class="lock-icon">？</div>
-            <h2>结局尚未解锁</h2>
-            <p>先打开私密箱。关键线索藏在相册、浏览器搜索和文档里。</p>
-            <button class="choice-btn primary" type="button" data-open-app="chat">回到聊天</button>
-          </div>
-        `;
-        return;
-      }
-
-      state.endingSeen = true;
-      saveState();
-      appBody.innerHTML = `
-        <div class="ending">
-          <div class="ending-banner">
-            <div>
-              <h2>结局 A：公开回声</h2>
-              <p>你没有去旧码头，而是把私密箱里的坐标和档案发给了所有联系人。十七分钟后，雾港的新闻推送同时亮起。</p>
-            </div>
-          </div>
-          <article class="doc-card">
-            <h3>下一版可以扩展什么？</h3>
-            <p>多角色聊天、错误结局、限时通知、伪网页、视频逐帧线索、分支信任度、真实存档菜单、章节编辑器。</p>
-          </article>
-        </div>
-      `;
-    }
-
-    function renderHelp() {
-      appBody.innerHTML = `
-        <div class="help-page">
-          <section class="help-hero">
-            <h2>雾港来信</h2>
-            <p>这是一个最小可玩原型：玩家在模拟手机里翻聊天、相册、文档、朋友圈和浏览器，通过线索找到私密箱密码，再触发结局。</p>
-          </section>
-
-          <section class="help-card">
-            <h3>当前谜题链</h3>
-            <p>聊天提示旧相册 → 相册得到地点 → 浏览器搜索地点 → 文档确认日期 → 输入四位密码。</p>
-          </section>
-
-          <section class="help-card">
-            <h3>解谜进度</h3>
-            <div class="progress-list" id="progressList" aria-label="解谜进度"></div>
-          </section>
-
-          <section class="help-card">
-            <h3>手机密码提示</h3>
-            <p>锁屏密码来自林夏最后同步时间：22:17，写成四位数字。</p>
-          </section>
-
-          <div class="reset-row">
-            <button class="desktop-btn primary" type="button" id="desktopHint">给我一点提示</button>
-            <button class="desktop-btn" type="button" id="resetGame">重置进度</button>
-          </div>
-        </div>
-      `;
-      renderProgress();
-    }
-
-    /*
-      =====================
-      十一、提示、进度、重置
-      =====================
-      这部分不是游戏必需，但很适合原型阶段测试流程是否顺畅。
-    */
-    function currentHint() {
-      if (!state.openedChat) return "先打开“微讯”，读林夏的消息。";
-      if (!state.viewedPhoto) return "去“相册”点开 IMG_0717，那张曝光失败的码头照片。";
-      if (!state.searchedPier) return "去“浏览器”搜索“雾港旧码头”。";
-      if (!state.readDoc) return "打开“文档”，读未命名档案，确认密码规则。";
-      if (!state.unlockedVault) return "私密箱密码是四位日期：7月17日写成 0717。";
-      return "已经解锁私密箱，可以查看结局。";
-    }
-
-    function renderProgress() {
-      const progressList = $("#progressList");
-      if (!progressList) return;
-      progressList.innerHTML = GAME_DATA.progress.map(item => `
-        <div class="progress-item ${state[item.key] ? "done" : ""}">
-          <span class="progress-dot"></span>
-          <span>${escapeHtml(item.text)}</span>
-        </div>
-      `).join("");
-    }
-
-    function updateBadges() {
-      $("#chatBadge").style.display = state.openedChat ? "none" : "grid";
-      $("#noticeText").textContent = state.unlockedVault ? "你已经拿到真正的档案了。" : "我把线索留在旧手机里了。";
-      $("#shadeNoticeText").textContent = state.unlockedVault ? "你已经拿到真正的档案了。" : "我把线索留在旧手机里了。";
-    }
-
-    function resetGame() {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(SAVE_META_KEY);
-      state = { ...defaultState };
-      gameSessionStarted = true;
-      saveState();
-      closeNotificationShade();
-      initScreen();
-    }
-
-    function tickClock() {
-      const now = new Date();
-      const text = now.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false });
-      $("#clock").textContent = text;
-      $("#homeTime").textContent = text;
-      $("#lockTime").textContent = text;
-      $("#shadeDate").textContent = now.toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" });
-    }
-
-    /*
-      =====================
-      十二、事件委托
-      =====================
-      使用事件委托可以让动态生成的按钮也自动生效。
-      例如 renderChat 重新绘制后，新按钮不需要重新单独绑定事件。
-    */
-    document.addEventListener("click", (event) => {
-      if (event.target.closest("#newGameBtn")) {
-        startNewGame();
-        return;
-      }
-
-      if (event.target.closest("#loadGameBtn")) {
-        loadSavedGame();
-        return;
-      }
-
-      if (event.target.closest("#saveGameBtn")) {
-        manuallySaveGame();
-        return;
-      }
-
-      if (event.target.closest("#menuLauncher")) {
-        openStartMenu();
-        return;
-      }
-
-      if (event.target.closest("#menuCloseBtn")) {
-        closeStartMenu();
-        return;
-      }
-
-      if (event.target.closest("#phoneUnlockBtn")) {
-        unlockPhone();
-        return;
-      }
-
-      if (event.target.closest("#shadeGrip")) {
-        toggleNotificationShade();
-        return;
-      }
-
-      if (event.target.closest("#shadeClose")) {
-        closeNotificationShade();
-        return;
-      }
-
-      if (event.target.closest("[data-lock-open-chat]")) {
-        $("#phonePassInput").focus();
-        $("#phoneLockError").textContent = "先解锁手机。提示：最后同步时间是 22:17。";
-        return;
-      }
-
-      if (event.target.closest("#desktopHint")) {
-        alert(currentHint());
-        return;
-      }
-
-      if (event.target.closest("#resetGame")) {
-        resetGame();
-        return;
-      }
-
-      const openButton = event.target.closest("[data-open-app]");
-      if (openButton) {
-        openApp(openButton.dataset.openApp);
-        return;
-      }
-
-      if (event.target.closest("[data-chat-next]")) {
-        state.chatStep += 1;
-        saveState();
-        renderChat();
-        return;
-      }
-
-      if (event.target.closest("[data-chat-reply]")) {
-        state.chatStep = GAME_DATA.chatOpening.length;
-        saveState();
-        renderChat();
-        return;
-      }
-
-      const photoButton = event.target.closest("[data-photo]");
-      if (photoButton) {
-        inspectPhoto(photoButton.dataset.photo);
-      }
-    });
-
-    $("#backBtn").addEventListener("click", goHome);
-    $("#homeBtn").addEventListener("click", goHome);
-    $("#hintBtn").addEventListener("click", () => alert(currentHint()));
-
-    appBody.addEventListener("click", (event) => {
-      if (event.target.id === "searchBtn") doSearch();
-      if (event.target.id === "unlockBtn") tryUnlock();
-    });
-
-    appBody.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && event.target.id === "searchInput") doSearch();
-      if (event.key === "Enter" && event.target.id === "passInput") tryUnlock();
-    });
-
-    $("#phonePassInput").addEventListener("keydown", (event) => {
-      if (event.key === "Enter") unlockPhone();
-    });
-
-    /*
-      =====================
-      十三、手机手势
-      =====================
-      这里不是完整的系统级手势，只模拟玩家最常用的“顶部下拉通知栏”。
-      使用 Pointer Events 可以同时兼容鼠标拖拽和手机触控。
-    */
-    let pointerStartY = null;
-    $(".phone").addEventListener("pointerdown", (event) => {
-      const isTopArea = event.clientY - $(".phone").getBoundingClientRect().top < 76;
-      const shadeOpen = notificationShade.classList.contains("open");
-      if (isTopArea || shadeOpen) pointerStartY = event.clientY;
-    });
-
-    $(".phone").addEventListener("pointerup", (event) => {
-      if (pointerStartY === null) return;
-      const deltaY = event.clientY - pointerStartY;
-      pointerStartY = null;
-
-      if (deltaY > 42) toggleNotificationShade(true);
-      if (deltaY < -36) closeNotificationShade();
-    });
-
-    tickClock();
-    setInterval(tickClock, 1000 * 20);
-    initScreen();
-    renderProgress();
-    updateBadges();
-    updateStartMenu();
-  </script>
+  <script src="data/characters.js"></script>
+  <script src="data/dialogues.js"></script>
+  <script src="data/clues.js"></script>
+  <script src="data/events.js"></script>
+  <script src="data/endings.js"></script>
+  <script src="game.js"></script>
 </body>
 </html>
