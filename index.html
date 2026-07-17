@@ -158,6 +158,215 @@
         linear-gradient(160deg, #1b2433, #0d1119 58%, #171922);
     }
 
+    /*
+      =====================
+      游戏初始菜单
+      =====================
+      菜单覆盖在整台模拟手机上方，因此玩家第一次打开链接时不会提前看到锁屏。
+      进入游戏后可以通过状态栏左侧的菜单按钮再次打开它。
+    */
+    .start-menu {
+      position: absolute;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      padding: 54px 28px 26px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, .06), transparent 24%),
+        linear-gradient(145deg, #111821 0%, #080a0f 58%, #15121a 100%);
+    }
+
+    .start-menu.active {
+      display: flex;
+      animation: menuIn .36s ease both;
+    }
+
+    .start-menu::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: .42;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, .03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .025) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(to bottom, black, transparent 74%);
+    }
+
+    .menu-close {
+      width: 36px;
+      height: 36px;
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 2;
+      display: none;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, .14);
+      border-radius: 8px;
+      color: rgba(255, 255, 255, .82);
+      background: rgba(255, 255, 255, .06);
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .menu-close.visible {
+      display: grid;
+    }
+
+    .menu-heading,
+    .menu-actions,
+    .menu-footer {
+      position: relative;
+      z-index: 1;
+    }
+
+    .menu-kicker {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .menu-kicker::before {
+      content: "";
+      width: 26px;
+      height: 2px;
+      background: var(--green);
+    }
+
+    .menu-title {
+      margin: 20px 0 8px;
+      font-size: 48px;
+      line-height: 1.08;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    .menu-subtitle {
+      max-width: 290px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .menu-mark {
+      width: 100%;
+      height: 116px;
+      position: relative;
+      margin-top: 34px;
+      border-top: 1px solid rgba(255, 255, 255, .12);
+      border-bottom: 1px solid rgba(255, 255, 255, .08);
+      overflow: hidden;
+    }
+
+    .menu-mark::before {
+      content: "07 / 17";
+      position: absolute;
+      left: 0;
+      top: 18px;
+      color: rgba(255, 255, 255, .08);
+      font-size: 68px;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .menu-mark::after {
+      content: "最后同步 22:17";
+      position: absolute;
+      right: 0;
+      bottom: 14px;
+      color: var(--amber);
+      font-size: 11px;
+    }
+
+    .menu-actions {
+      display: grid;
+      gap: 9px;
+      margin-top: auto;
+    }
+
+    .menu-action {
+      min-height: 48px;
+      display: grid;
+      grid-template-columns: 30px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 0 14px;
+      border: 1px solid rgba(255, 255, 255, .13);
+      border-radius: 8px;
+      text-align: left;
+      background: rgba(255, 255, 255, .055);
+      transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    }
+
+    .menu-action:hover,
+    .menu-action:focus-visible {
+      border-color: rgba(110, 214, 255, .52);
+      background: rgba(110, 214, 255, .09);
+      outline: none;
+    }
+
+    .menu-action:active {
+      transform: scale(.985);
+    }
+
+    .menu-action.primary {
+      border-color: transparent;
+      color: #06120d;
+      background: linear-gradient(135deg, var(--green), var(--cyan));
+      font-weight: 700;
+    }
+
+    .menu-action:disabled {
+      cursor: not-allowed;
+      opacity: .38;
+      transform: none;
+    }
+
+    .menu-action-icon {
+      font-size: 18px;
+      text-align: center;
+    }
+
+    .menu-action-meta {
+      color: currentColor;
+      opacity: .58;
+      font-size: 11px;
+    }
+
+    .save-summary {
+      min-height: 18px;
+      margin: 4px 2px 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .save-summary.success {
+      color: var(--green);
+    }
+
+    .menu-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, .09);
+      color: var(--dim);
+      font-size: 10px;
+    }
+
     .speaker {
       width: 96px;
       height: 26px;
@@ -180,6 +389,25 @@
       font-weight: 500;
       position: relative;
       z-index: 42;
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .menu-launcher {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border-radius: 6px;
+      color: rgba(255, 255, 255, .84);
+      background: rgba(255, 255, 255, .08);
+      font-size: 15px;
+      line-height: 1;
     }
 
     .shade-grip {
@@ -1141,6 +1369,11 @@
       50% { opacity: .9; transform: scaleX(1); }
     }
 
+    @keyframes menuIn {
+      from { opacity: 0; transform: scale(1.015); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
     @media (max-width: 820px) {
       body {
         display: block;
@@ -1199,6 +1432,15 @@
       .speaker {
         display: none;
       }
+
+      .start-menu {
+        padding-top: max(42px, env(safe-area-inset-top));
+        padding-bottom: max(22px, env(safe-area-inset-bottom));
+      }
+
+      .menu-title {
+        font-size: 44px;
+      }
     }
   </style>
 </head>
@@ -1206,10 +1448,52 @@
   <main class="stage">
     <section class="phone-shell" aria-label="模拟手机">
       <div class="phone">
+        <!--
+          初始菜单始终是页面加载后的第一层画面。
+          关闭菜单后才会看到模拟手机的锁屏或上次保存的应用界面。
+        -->
+        <section id="startMenu" class="start-menu active" aria-label="游戏主菜单" aria-hidden="false">
+          <button class="menu-close" type="button" id="menuCloseBtn" aria-label="返回游戏" title="返回游戏">×</button>
+
+          <div class="menu-heading">
+            <div class="menu-kicker">INTERACTIVE MYSTERY</div>
+            <h1 class="menu-title">雾港来信</h1>
+            <p class="menu-subtitle">一部藏在旧手机里的失踪谜案。每条消息，都可能是她留下的证词。</p>
+            <div class="menu-mark" aria-hidden="true"></div>
+          </div>
+
+          <div class="menu-actions">
+            <button class="menu-action primary" type="button" id="newGameBtn">
+              <span class="menu-action-icon" aria-hidden="true">▶</span>
+              <span>开始游戏</span>
+              <span class="menu-action-meta">新档案</span>
+            </button>
+            <button class="menu-action" type="button" id="loadGameBtn">
+              <span class="menu-action-icon" aria-hidden="true">↻</span>
+              <span>读取游戏</span>
+              <span class="menu-action-meta">读取存档</span>
+            </button>
+            <button class="menu-action" type="button" id="saveGameBtn" disabled>
+              <span class="menu-action-icon" aria-hidden="true">▣</span>
+              <span>保存游戏</span>
+              <span class="menu-action-meta">当前进度</span>
+            </button>
+            <div class="save-summary" id="saveSummary" aria-live="polite">正在检查本地存档…</div>
+          </div>
+
+          <footer class="menu-footer">
+            <span>制作者 · chandlerler</span>
+            <span id="menuVersion">v1.01</span>
+          </footer>
+        </section>
+
         <div class="speaker" aria-hidden="true"></div>
         <div class="status-bar">
           <button class="shade-grip" type="button" id="shadeGrip" aria-label="打开通知栏"></button>
-          <span id="clock">22:17</span>
+          <span class="status-left">
+            <button class="menu-launcher" type="button" id="menuLauncher" aria-label="打开游戏菜单" title="游戏菜单">☰</button>
+            <span id="clock">22:17</span>
+          </span>
           <span class="signal">
             5G
             <span class="battery" aria-hidden="true"><span></span></span>
@@ -1365,6 +1649,13 @@
       这里是原型最重要的“内容层”。
       正式项目中建议把这些数据拆到 data/*.json，让编剧可以只改文本，不碰逻辑代码。
     */
+    /*
+      每次发布功能更新时，将 GAME_VERSION 增加 0.01，并同步记录到 CHANGELOG.md。
+      版本号放在脚本常量中，后续可以在菜单、帮助页或存档信息里统一复用。
+    */
+    const GAME_VERSION = "1.01";
+    const GAME_CREATOR = "chandlerler";
+
     const GAME_DATA = {
       phonePassword: "2217",
       password: "0717",
@@ -1427,7 +1718,9 @@
     };
 
     const STORAGE_KEY = "fogport-phone-mystery-mvp";
+    const SAVE_META_KEY = "fogport-phone-mystery-save-meta";
     let state = loadState();
+    let gameSessionStarted = false;
 
     function loadState() {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -1441,8 +1734,23 @@
 
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(SAVE_META_KEY, JSON.stringify({
+        savedAt: new Date().toISOString(),
+        version: GAME_VERSION
+      }));
       renderProgress();
       updateBadges();
+      updateStartMenu();
+    }
+
+    /* 旧版本没有单独的存档信息；读取失败时返回 null，不影响旧进度兼容。 */
+    function readSaveMeta() {
+      try {
+        const value = localStorage.getItem(SAVE_META_KEY);
+        return value ? JSON.parse(value) : null;
+      } catch {
+        return null;
+      }
     }
 
     /*
@@ -1458,6 +1766,11 @@
     const homeScreen = $("#homeScreen");
     const appScreen = $("#appScreen");
     const notificationShade = $("#notificationShade");
+    const startMenu = $("#startMenu");
+    const loadGameBtn = $("#loadGameBtn");
+    const saveGameBtn = $("#saveGameBtn");
+    const menuCloseBtn = $("#menuCloseBtn");
+    const saveSummary = $("#saveSummary");
 
     function escapeHtml(text) {
       return String(text)
@@ -1491,7 +1804,104 @@
 
     /*
       =====================
-      四、导航系统
+      四、主菜单与手动存档
+      =====================
+      游戏过程仍然自动保存；菜单中的“保存游戏”提供一个明确的手动保存动作。
+      “读取游戏”会恢复上次所在应用，旧版存档缺少元数据时也可以继续读取。
+    */
+    function hasStoredSave() {
+      try {
+        return Boolean(localStorage.getItem(STORAGE_KEY));
+      } catch {
+        return false;
+      }
+    }
+
+    function formatSaveTime(isoText) {
+      if (!isoText) return "发现旧版存档，可以继续读取";
+      const date = new Date(isoText);
+      if (Number.isNaN(date.getTime())) return "已有本地存档";
+      return `上次保存：${date.toLocaleString("zh-CN", {
+        month: "numeric",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      })}`;
+    }
+
+    function updateStartMenu(message = "", success = false) {
+      const hasSave = hasStoredSave();
+      const meta = readSaveMeta();
+
+      loadGameBtn.disabled = !hasSave;
+      saveGameBtn.disabled = !gameSessionStarted;
+      menuCloseBtn.classList.toggle("visible", gameSessionStarted);
+      $("#menuVersion").textContent = `v${GAME_VERSION}`;
+
+      saveSummary.classList.toggle("success", success);
+      if (message) {
+        saveSummary.textContent = message;
+      } else if (hasSave) {
+        saveSummary.textContent = `${formatSaveTime(meta?.savedAt)} · v${meta?.version || "1.00"}`;
+      } else {
+        saveSummary.textContent = "暂无存档，开始游戏后将自动保存";
+      }
+    }
+
+    function openStartMenu() {
+      closeNotificationShade();
+      startMenu.classList.add("active");
+      startMenu.setAttribute("aria-hidden", "false");
+      updateStartMenu();
+    }
+
+    function closeStartMenu() {
+      if (!gameSessionStarted) return;
+      startMenu.classList.remove("active");
+      startMenu.setAttribute("aria-hidden", "true");
+    }
+
+    function startNewGame() {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(SAVE_META_KEY);
+      state = { ...defaultState };
+      gameSessionStarted = true;
+      saveState();
+      initScreen();
+      closeStartMenu();
+      $("#phonePassInput").value = "";
+      $("#phoneLockError").textContent = "";
+    }
+
+    function loadSavedGame() {
+      if (!hasStoredSave()) {
+        updateStartMenu("没有找到可读取的本地存档");
+        return;
+      }
+
+      state = loadState();
+      gameSessionStarted = true;
+      closeStartMenu();
+
+      if (!state.phoneUnlocked) {
+        initScreen();
+      } else if (state.activeApp) {
+        openApp(state.activeApp);
+      } else {
+        goHome();
+      }
+    }
+
+    function manuallySaveGame() {
+      if (!gameSessionStarted) return;
+      saveState();
+      updateStartMenu("当前进度已保存", true);
+    }
+
+    /*
+      =====================
+      五、导航系统
       =====================
       openApp 根据 app 名称渲染不同模拟应用。
       每个 App 都是一个 renderXxx 函数，这样后续添加“邮箱”“短信”“地图”会很直观。
@@ -1946,9 +2356,10 @@
 
     function resetGame() {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(SAVE_META_KEY);
       state = { ...defaultState };
-      renderProgress();
-      updateBadges();
+      gameSessionStarted = true;
+      saveState();
       closeNotificationShade();
       initScreen();
     }
@@ -1970,6 +2381,31 @@
       例如 renderChat 重新绘制后，新按钮不需要重新单独绑定事件。
     */
     document.addEventListener("click", (event) => {
+      if (event.target.closest("#newGameBtn")) {
+        startNewGame();
+        return;
+      }
+
+      if (event.target.closest("#loadGameBtn")) {
+        loadSavedGame();
+        return;
+      }
+
+      if (event.target.closest("#saveGameBtn")) {
+        manuallySaveGame();
+        return;
+      }
+
+      if (event.target.closest("#menuLauncher")) {
+        openStartMenu();
+        return;
+      }
+
+      if (event.target.closest("#menuCloseBtn")) {
+        closeStartMenu();
+        return;
+      }
+
       if (event.target.closest("#phoneUnlockBtn")) {
         unlockPhone();
         return;
@@ -2073,6 +2509,7 @@
     initScreen();
     renderProgress();
     updateBadges();
+    updateStartMenu();
   </script>
 </body>
 </html>
