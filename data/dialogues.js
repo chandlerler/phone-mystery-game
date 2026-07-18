@@ -15,7 +15,31 @@
       messages: [
         "你终于打开这部手机了。先确认一件事：现在和你说话的内容，大部分是我提前写好的，不代表我此刻安全。",
         "三年前，七码头发生火灾，七个人没有出来。官方说是线路老化，但我找到的日志显示，起火前四十分钟，有人远程关闭了整个码头的网络节点。",
+        {
+          type: "image",
+          src: "assets/photos/pier-night.jpg",
+          alt: "夜色中的雾港七码头",
+          caption: "IMG_0717 原图预览。完整照片在相册里，注意右侧护栏和车辆倒影。",
+          targetApp: "gallery",
+          targetId: "pier_exposure"
+        },
         "那套网络原本负责监听求救声和触发消防报警，后来被改造成了‘回声计划’：它能识别每一个经过公共区域的人。有人为了销毁监控测试记录，把报警一起关了。",
+        {
+          type: "link",
+          targetApp: "social",
+          targetId: "tang_deadline",
+          eyebrow: "朋友圈动态",
+          title: "唐梨：有些报道等不起",
+          description: "她今天发的这句话不是感慨。点开后检查这条动态。"
+        },
+        {
+          type: "link",
+          targetApp: "browser",
+          targetId: "demo_briefing",
+          eyebrow: "archive.local",
+          title: "七码头事故公开资料索引",
+          description: "一份不影响主线进度的 Demo 文章，用来验证聊天内链接跳转。"
+        },
         "我把证据拆成了几份，因为任何一个人拿到全部内容，都可能选择对自己最有利的版本。先看相册里的 IMG_0717，然后联系周衡和唐梨。别急着相信我们中的任何一个，包括我。"
       ],
       choices: [

@@ -687,6 +687,7 @@
     .logo-vault { color: #fff5d6; }
     .logo-ending { color: #fff7ed; }
     .logo-help { color: #f5fcff; }
+    .logo-settings { color: #f7fbff; }
 
     .notice b {
       display: block;
@@ -1039,6 +1040,62 @@
       color: #06130d;
     }
 
+    /* 图片与内部链接沿用气泡位置，但采用稳定尺寸，避免资源加载时推动聊天布局。 */
+    .chat-image-message,
+    .chat-link-message {
+      width: min(242px, 66vw);
+      padding: 0;
+      overflow: hidden;
+      text-align: left;
+      color: var(--text);
+    }
+
+    .chat-image-message img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      display: block;
+      object-fit: cover;
+    }
+
+    .chat-image-message span {
+      display: block;
+      padding: 9px 11px 10px;
+      color: rgba(255, 255, 255, .78);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .chat-link-message {
+      padding: 12px;
+      display: grid;
+      gap: 5px;
+      border-left: 3px solid var(--cyan);
+    }
+
+    .chat-link-message small {
+      color: var(--cyan);
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .chat-link-message b {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .chat-link-message span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .chat-link-message i {
+      margin-top: 3px;
+      color: var(--green);
+      font-size: 11px;
+      font-style: normal;
+    }
+
     .msg-time {
       padding: 0 4px;
       color: var(--dim);
@@ -1256,6 +1313,26 @@
     .browser-result {
       padding: 13px;
       margin-bottom: 10px;
+      width: 100%;
+      color: var(--text);
+      text-align: left;
+    }
+
+    .browser-article {
+      padding: 24px 18px;
+    }
+
+    .browser-article h2 {
+      margin: 8px 0 14px;
+      font-size: 24px;
+      line-height: 1.35;
+    }
+
+    .browser-article p {
+      margin: 0 0 24px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.9;
     }
 
     .browser-result b {
@@ -1393,6 +1470,118 @@
       padding: 14px;
       display: grid;
       gap: 12px;
+    }
+
+    .settings-page {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .settings-group,
+    .settings-note {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, .055);
+      overflow: hidden;
+    }
+
+    .settings-group h3 {
+      margin: 0;
+      padding: 13px 14px 9px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .setting-row {
+      min-height: 72px;
+      padding: 10px 14px;
+      display: grid;
+      grid-template-columns: 38px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      border-top: 1px solid var(--line);
+    }
+
+    .setting-symbol {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #4ed59a, #5a8cff);
+      color: #08130f;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .setting-copy b,
+    .setting-copy small {
+      display: block;
+    }
+
+    .setting-copy b {
+      margin-bottom: 3px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .setting-copy small,
+    .system-switch small,
+    .settings-note span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .system-switch {
+      display: grid;
+      justify-items: end;
+      gap: 4px;
+      background: transparent;
+    }
+
+    .switch-track {
+      width: 42px;
+      height: 24px;
+      padding: 3px;
+      display: block;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .16);
+      transition: background .18s ease;
+    }
+
+    .switch-track i {
+      width: 18px;
+      height: 18px;
+      display: block;
+      border-radius: 50%;
+      background: white;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .3);
+      transition: transform .18s ease;
+    }
+
+    .system-switch.on .switch-track {
+      background: var(--green);
+    }
+
+    .system-switch.on .switch-track i {
+      transform: translateX(18px);
+    }
+
+    .settings-note {
+      padding: 14px;
+    }
+
+    .settings-note b,
+    .settings-note span {
+      display: block;
+    }
+
+    .settings-note b {
+      margin-bottom: 5px;
+      font-size: 13px;
+      font-weight: 500;
     }
 
     .help-hero {
@@ -1627,7 +1816,7 @@
     }
 
     /* ========================================================
-       v1.05 多人物剧情系统
+       v1.06 富媒体消息与通知反馈
        这些样式服务于联系人、证据照片、关系值和多结局界面。
        ======================================================== */
     .messenger-shell {
@@ -2241,6 +2430,10 @@
       <circle cx="12" cy="12" r="10"/>
       <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/>
     </symbol>
+    <symbol id="logo-settings" viewBox="0 0 24 24">
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </symbol>
   </svg>
 
   <main class="stage">
@@ -2286,7 +2479,7 @@
 
           <footer class="menu-footer">
             <span>制作者 · chandlerler</span>
-            <span id="menuVersion">v1.05</span>
+            <span id="menuVersion">v1.06</span>
           </footer>
         </section>
 
@@ -2336,8 +2529,8 @@
             <div class="quick-grid" aria-label="快捷开关">
               <button class="quick-toggle on" type="button">5G<br>在线</button>
               <button class="quick-toggle on" type="button">定位<br>开启</button>
-              <button class="quick-toggle" type="button">静音<br>关闭</button>
-              <button class="quick-toggle" type="button">电量<br>72%</button>
+              <button class="quick-toggle on" type="button" data-setting-toggle="sound" aria-pressed="true">提示音<br><span data-setting-state>开启</span></button>
+              <button class="quick-toggle on" type="button" data-setting-toggle="vibration" aria-pressed="true">震动<br><span data-setting-state>开启</span></button>
             </div>
             <button class="shade-card" type="button" data-open-app="chat">
               <img class="notice-icon character-avatar" src="assets/avatars/linxia.jpg" alt="">
@@ -2428,6 +2621,12 @@
                 </span>
                 <span>调查簿</span>
               </button>
+              <button class="app-icon" type="button" data-open-app="settings">
+                <span class="icon-tile" style="background:linear-gradient(135deg,#7c8799,#303641)">
+                  <svg class="app-logo-svg logo-settings" aria-hidden="true"><use href="#logo-settings"></use></svg>
+                </span>
+                <span>设置</span>
+              </button>
             </div>
 
             <div class="dock">
@@ -2476,11 +2675,11 @@
   </main>
 
   <!-- 版本参数用于绕过手机浏览器对拆分脚本的旧缓存，避免 HTML 与剧情引擎版本不一致。 -->
-  <script src="data/characters.js?v=1.05.3"></script>
-  <script src="data/dialogues.js?v=1.05.3"></script>
-  <script src="data/clues.js?v=1.05.3"></script>
-  <script src="data/events.js?v=1.05.3"></script>
-  <script src="data/endings.js?v=1.05.3"></script>
-  <script src="game.js?v=1.05.3"></script>
+  <script src="data/characters.js?v=1.06.1"></script>
+  <script src="data/dialogues.js?v=1.06.1"></script>
+  <script src="data/clues.js?v=1.06.1"></script>
+  <script src="data/events.js?v=1.06.1"></script>
+  <script src="data/endings.js?v=1.06.1"></script>
+  <script src="game.js?v=1.06.1"></script>
 </body>
 </html>

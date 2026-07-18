@@ -11,7 +11,7 @@
     title: "雾港来信：回声盲区",
     shortTitle: "雾港来信",
     subtitle: "一部藏在旧手机里的失踪谜案。救人、真相、司法与隐私，没有一个选择完全干净。",
-    version: "1.05",
+    version: "1.06",
     creator: "chandlerler",
     phonePassword: "2217",
     storageKey: "fogport-echo-blind-zone-v105",
@@ -42,7 +42,8 @@
     videos: "视频",
     vault: "密钥库",
     ending: "抉择",
-    help: "调查簿"
+    help: "调查簿",
+    settings: "设置"
   };
 
   /*

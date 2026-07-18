@@ -85,6 +85,15 @@
 
     searches: [
       {
+        id: "demo_briefing",
+        keywords: ["事故索引", "公开资料", "七码头资料"],
+        requires: {},
+        setFlag: "readDemoBriefing",
+        title: "七码头事故公开资料索引",
+        url: "archive.local/pier-briefing",
+        text: "这份索引收录了七码头的公开通报、停电记录和已删除讨论的网页快照。当前页面只是富媒体聊天的 Demo 内容，不会提前完成主线谜题。"
+      },
+      {
         id: "pier_search",
         keywords: ["七码头", "雾港七码头", "P-07", "码头火灾"],
         requires: { flags: ["photoExif"] },
