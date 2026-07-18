@@ -19,6 +19,8 @@
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => Array.from(document.querySelectorAll(selector));
   const META = DATA.meta;
+  document.documentElement.dataset.engineVersion = META.version;
+  document.documentElement.dataset.messageMode = "queued";
 
   const startMenu = $("#startMenu");
   const lockScreen = $("#lockScreen");
@@ -29,6 +31,8 @@
   const notificationShade = $("#notificationShade");
 
   let gameSessionStarted = false;
+  let deliveryTimer = null;
+  let typingContactId = null;
 
   /* 创建一份完全干净的新游戏状态。复杂对象必须逐层初始化，避免角色消息互相引用。 */
   function createDefaultState() {
@@ -54,12 +58,19 @@
       activatedDialogues: [],
       completedDialogues: [],
       activeNodeByContact: {},
+      dialogueProgress: {},
+      pendingResponses: {},
       firedEvents: [],
       searchHistory: [],
       puzzleAttempts: {},
       decision: null,
       endingId: null,
-      messageSerial: 0
+      messageSerial: 0,
+      storyClock: {
+        stageId: DATA.timeline?.[0]?.id || "intro",
+        elapsedMs: 0,
+        realAnchor: Date.now()
+      }
     };
   }
 
@@ -81,12 +92,19 @@
       unread: { ...base.unread, ...(saved.unread || {}) },
       messages: mergedMessages,
       activeNodeByContact: { ...base.activeNodeByContact, ...(saved.activeNodeByContact || {}) },
+      dialogueProgress: { ...base.dialogueProgress, ...(saved.dialogueProgress || {}) },
+      pendingResponses: { ...base.pendingResponses, ...(saved.pendingResponses || {}) },
       puzzleAttempts: { ...base.puzzleAttempts, ...(saved.puzzleAttempts || {}) },
       unlockedContacts: Array.from(new Set([...(saved.unlockedContacts || []), "linxia"])),
       activatedDialogues: Array.from(new Set(saved.activatedDialogues || [])),
       completedDialogues: Array.from(new Set(saved.completedDialogues || [])),
       firedEvents: Array.from(new Set(saved.firedEvents || [])),
-      searchHistory: Array.from(new Set(saved.searchHistory || []))
+      searchHistory: Array.from(new Set(saved.searchHistory || [])),
+      storyClock: {
+        ...base.storyClock,
+        ...(saved.storyClock || {}),
+        realAnchor: Date.now()
+      }
     };
   }
 
@@ -101,6 +119,7 @@
   let state = loadState();
 
   function saveState() {
+    syncStoryClockElapsed();
     localStorage.setItem(META.storageKey, JSON.stringify(state));
     localStorage.setItem(META.saveMetaKey, JSON.stringify({
       savedAt: new Date().toISOString(),
@@ -151,20 +170,66 @@
     return true;
   }
 
+  /*
+    剧情时钟不读取玩家设备的当前日期，只借用 Date.now() 计算现实经过了多久。
+    月份在数据里按人类习惯使用 1-12，因此创建 Date 时需要减一。
+  */
+  function timelinePoint(parts = [2026, 7, 17, 22, 17]) {
+    return new Date(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], 0, 0).getTime();
+  }
+
+  function getTimelineStage(stageId = state.storyClock?.stageId) {
+    return (DATA.timeline || []).find((stage) => stage.id === stageId) || DATA.timeline?.[0];
+  }
+
+  function syncStoryClockElapsed() {
+    if (!state.storyClock) return;
+    const stage = getTimelineStage();
+    if (!stage) return;
+    const now = Date.now();
+    const duration = Math.max(0, timelinePoint(stage.end) - timelinePoint(stage.start));
+    const realElapsed = Math.max(0, now - Number(state.storyClock.realAnchor || now));
+    state.storyClock.elapsedMs = Math.min(duration, Number(state.storyClock.elapsedMs || 0) + realElapsed);
+    state.storyClock.realAnchor = now;
+  }
+
+  function syncTimelineStage() {
+    const available = (DATA.timeline || []).filter((stage) => conditionMet(stage.requires));
+    const nextStage = available[available.length - 1];
+    if (!nextStage) return;
+    syncStoryClockElapsed();
+    if (state.storyClock.stageId !== nextStage.id) {
+      state.storyClock = { stageId: nextStage.id, elapsedMs: 0, realAnchor: Date.now() };
+    }
+  }
+
+  function getStoryDate() {
+    const stage = getTimelineStage();
+    if (!stage) return new Date(2026, 6, 17, 22, 17);
+    const duration = Math.max(0, timelinePoint(stage.end) - timelinePoint(stage.start));
+    const realElapsed = Math.max(0, Date.now() - Number(state.storyClock.realAnchor || Date.now()));
+    const elapsed = Math.min(duration, Number(state.storyClock.elapsedMs || 0) + realElapsed);
+    return new Date(timelinePoint(stage.start) + elapsed);
+  }
+
+  function storyTimeText() {
+    return getStoryDate().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false });
+  }
+
   function unlockContacts(ids = []) {
     ids.forEach((id) => {
       if (DATA.characters[id] && !state.unlockedContacts.includes(id)) state.unlockedContacts.push(id);
     });
   }
 
-  function addMessage(contactId, from, text, time = "刚刚") {
+  function addMessage(contactId, from, text, time = null) {
     state.messageSerial += 1;
     state.messages[contactId] = state.messages[contactId] || [];
     state.messages[contactId].push({
       id: `m${state.messageSerial}`,
       from,
       text,
-      time
+      time: time || storyTimeText()
     });
   }
 
@@ -201,16 +266,91 @@
     if (!node) return false;
 
     unlockContacts([node.contact]);
-    node.messages.forEach((text, index) => {
-      addMessage(node.contact, node.contact, text, index === 0 && dialogueId === "linxia_intro" ? "22:17" : "刚刚");
-    });
     state.activatedDialogues.push(dialogueId);
     state.activeNodeByContact[node.contact] = dialogueId;
+    state.dialogueProgress[dialogueId] = 0;
 
     const isReadingThisThread = state.activeApp === "chat" && state.activeContact === node.contact;
-    if (!isReadingThisThread) state.unread[node.contact] = (state.unread[node.contact] || 0) + node.messages.length;
-    showToast(node.contact, node.messages[0]);
+    if (!isReadingThisThread) state.unread[node.contact] = Math.max(1, state.unread[node.contact] || 0);
+    showToast(node.contact, "有一条新消息，打开对话后接收。");
+    if (isReadingThisThread) scheduleNextMessage(node.contact);
     return true;
+  }
+
+  /* 文本越长，角色保持“正在输入”的时间越长；上下限避免过快闪现或等待过久。 */
+  function messageDelay(text) {
+    return Math.max(1300, Math.min(4200, 850 + String(text || "").length * 24));
+  }
+
+  function clearMessageDelivery() {
+    if (deliveryTimer) clearTimeout(deliveryTimer);
+    deliveryTimer = null;
+    typingContactId = null;
+  }
+
+  function queuedMessageFor(contactId) {
+    const pending = state.pendingResponses[contactId];
+    if (pending) {
+      const node = DATA.dialogues[pending.nodeId];
+      const choice = node?.choices.find((item) => item.id === pending.choiceId);
+      const responses = choice?.response || [];
+      if (pending.index < responses.length) {
+        return { kind: "response", text: responses[pending.index], pending, node, choice };
+      }
+    }
+
+    const nodeId = state.activeNodeByContact[contactId];
+    const node = DATA.dialogues[nodeId];
+    const progress = Number(state.dialogueProgress[nodeId] || 0);
+    if (node && progress < node.messages.length) {
+      return { kind: "node", text: node.messages[progress], node, index: progress };
+    }
+    return null;
+  }
+
+  function finishDialogueChoice(contactId, pending) {
+    const node = DATA.dialogues[pending.nodeId];
+    const choice = node?.choices.find((item) => item.id === pending.choiceId);
+    if (!node || !choice) return;
+    delete state.pendingResponses[contactId];
+    applyEffects(choice.effects);
+    if (!state.completedDialogues.includes(node.id)) state.completedDialogues.push(node.id);
+    if (state.activeNodeByContact[contactId] === node.id) delete state.activeNodeByContact[contactId];
+    evaluateEvents();
+  }
+
+  function scheduleNextMessage(contactId) {
+    if (deliveryTimer || state.activeApp !== "chat" || state.activeContact !== contactId) return;
+    const queued = queuedMessageFor(contactId);
+    if (!queued) {
+      typingContactId = null;
+      return;
+    }
+
+    typingContactId = contactId;
+    const status = $("#typingStatus");
+    if (status) {
+      status.textContent = "正在输入中";
+      status.classList.add("active");
+    }
+
+    const delay = messageDelay(queued.text);
+    deliveryTimer = setTimeout(() => {
+      deliveryTimer = null;
+      typingContactId = null;
+      addMessage(contactId, contactId, queued.text);
+
+      if (queued.kind === "node") {
+        state.dialogueProgress[queued.node.id] = queued.index + 1;
+      } else {
+        queued.pending.index += 1;
+        const responses = queued.choice?.response || [];
+        if (queued.pending.index >= responses.length) finishDialogueChoice(contactId, queued.pending);
+      }
+
+      saveState();
+      if (state.activeApp === "chat" && state.activeContact === contactId) renderChat();
+    }, delay);
   }
 
   /*
@@ -231,6 +371,7 @@
       }
       guard += 1;
     } while (changed && guard < 20);
+    syncTimelineStage();
   }
 
   function completeDialogue(contactId, choiceId) {
@@ -240,12 +381,10 @@
     const choice = node.choices.find((item) => item.id === choiceId);
     if (!choice) return;
 
-    addMessage(contactId, "player", choice.reply, "已发送");
-    (choice.response || []).forEach((text) => addMessage(contactId, contactId, text));
-    applyEffects(choice.effects);
-    state.completedDialogues.push(nodeId);
-    delete state.activeNodeByContact[contactId];
-    evaluateEvents();
+    clearMessageDelivery();
+    addMessage(contactId, "player", choice.reply);
+    state.pendingResponses[contactId] = { nodeId, choiceId, index: 0 };
+    if (!(choice.response || []).length) finishDialogueChoice(contactId, state.pendingResponses[contactId]);
     saveState();
     renderChat();
   }
@@ -272,6 +411,10 @@
     const meta = readSaveMeta();
     if (loadButton) loadButton.disabled = !hasStoredSave();
     if (saveButton) saveButton.disabled = !gameSessionStarted;
+    const continueButton = $("#continueGameBtn");
+    const closeButton = $("#menuCloseBtn");
+    if (continueButton) continueButton.hidden = !gameSessionStarted;
+    if (closeButton) closeButton.classList.toggle("visible", gameSessionStarted);
     if ($("#menuVersion")) $("#menuVersion").textContent = `v${META.version}`;
     if ($("#saveSummary")) {
       $("#saveSummary").textContent = message || (meta ? `上次保存：${formatSaveTime(meta.savedAt)} · v${meta.version || "未知"}` : "尚未建立《回声盲区》存档");
@@ -280,6 +423,7 @@
   }
 
   function openStartMenu() {
+    clearMessageDelivery();
     startMenu.classList.add("active");
     startMenu.setAttribute("aria-hidden", "false");
     updateStartMenu();
@@ -289,6 +433,7 @@
     if (!gameSessionStarted) return;
     startMenu.classList.remove("active");
     startMenu.setAttribute("aria-hidden", "true");
+    if (state.activeApp === "chat" && state.activeContact) scheduleNextMessage(state.activeContact);
   }
 
   function startNewGame() {
@@ -303,14 +448,19 @@
 
   function loadSavedGame() {
     if (!hasStoredSave()) {
-      updateStartMenu("没有可读取的 v1.04 存档。", false);
+      updateStartMenu("没有可读取的 v1.05 存档。", false);
       return;
     }
     state = loadState();
+    const savedApp = state.activeApp;
+    const savedContact = state.activeContact;
     gameSessionStarted = true;
     closeStartMenu();
     initScreen();
-    if (state.phoneUnlocked && state.activeApp) openApp(state.activeApp);
+    if (state.phoneUnlocked && savedApp) {
+      state.activeContact = savedContact;
+      openApp(savedApp);
+    }
     showToast("linxia", "存档已读取，调查继续。");
   }
 
@@ -321,6 +471,7 @@
   }
 
   function initScreen() {
+    clearMessageDelivery();
     closeNotificationShade();
     lockScreen.classList.toggle("active", !state.phoneUnlocked);
     homeScreen.classList.toggle("active", state.phoneUnlocked);
@@ -367,6 +518,7 @@
     };
     if (!renderMap[appName]) return;
 
+    clearMessageDelivery();
     state.activeApp = appName;
     closeNotificationShade();
     lockScreen.classList.remove("active");
@@ -378,6 +530,7 @@
   }
 
   function goHome() {
+    clearMessageDelivery();
     state.activeApp = null;
     state.activeContact = null;
     closeNotificationShade();
@@ -394,13 +547,14 @@
         const thread = state.messages[id] || [];
         const lastMessage = thread[thread.length - 1];
         const unread = state.unread[id] || 0;
+        const hasPending = Boolean(queuedMessageFor(id));
         return `
           <button class="contact-row" type="button" data-contact="${id}">
             <img class="contact-row-avatar character-avatar" src="${character.avatar}" alt="${escapeHtml(character.name)}">
             <span class="contact-row-copy">
               <span class="contact-row-top"><b>${escapeHtml(character.name)}</b><small>${lastMessage ? escapeHtml(lastMessage.time) : ""}</small></span>
               <span class="contact-role">${escapeHtml(character.role)}</span>
-              <span class="contact-preview">${escapeHtml(lastMessage ? lastMessage.text : character.status)}</span>
+              <span class="contact-preview">${escapeHtml(lastMessage ? lastMessage.text : (hasPending ? "点击接收新消息" : "暂无新消息"))}</span>
             </span>
             ${unread ? `<span class="contact-unread">${Math.min(unread, 99)}</span>` : ""}
           </button>
@@ -438,16 +592,20 @@
 
     const activeNodeId = state.activeNodeByContact[contactId];
     const activeNode = DATA.dialogues[activeNodeId];
-    const choicesHtml = activeNode ? activeNode.choices.map((choice, index) => `
+    const nodeMessagesComplete = activeNode && Number(state.dialogueProgress[activeNodeId] || 0) >= activeNode.messages.length;
+    const waitingForResponse = Boolean(state.pendingResponses[contactId]);
+    const choicesHtml = activeNode && nodeMessagesComplete && !waitingForResponse ? activeNode.choices.map((choice, index) => `
       <button class="choice-btn ${index === 0 ? "primary" : ""}" type="button" data-dialogue-choice="${choice.id}">${escapeHtml(choice.text)}</button>
-    `).join("") : '<div class="quiet-state">暂时没有新消息。继续调查其他 App，新的线索会改变对话。</div>';
+    `).join("") : queuedMessageFor(contactId)
+      ? '<div class="quiet-state">等待对方输入…</div>'
+      : '<div class="quiet-state">暂时没有新消息。继续调查其他 App，新的线索会改变对话。</div>';
 
     appBody.innerHTML = `
       <div class="chat-layout">
         <div class="contact-card">
           <button class="thread-back" type="button" data-chat-list aria-label="返回联系人">‹</button>
           <img class="avatar character-avatar" src="${character.avatar}" alt="${escapeHtml(character.name)}">
-          <div class="contact-card-copy"><b>${escapeHtml(character.name)}</b><span>${escapeHtml(character.status)} · 信任 ${formatTrust(state.trust[contactId])}</span></div>
+          <div class="contact-card-copy"><b>${escapeHtml(character.name)}</b><span class="typing-status ${typingContactId === contactId ? "active" : ""}" id="typingStatus">${typingContactId === contactId ? "正在输入中" : ""}</span></div>
         </div>
         <div class="messages" id="messages">${messagesHtml || '<div class="empty-hint">等待对方发送消息。</div>'}</div>
         <div class="choice-panel">${choicesHtml}</div>
@@ -455,6 +613,7 @@
     `;
     $("#messages").scrollTop = $("#messages").scrollHeight;
     updateBadges();
+    scheduleNextMessage(contactId);
   }
 
   function formatTrust(value) {
@@ -757,12 +916,17 @@
   }
 
   function tickClock() {
-    const now = new Date();
+    syncTimelineStage();
+    const now = getStoryDate();
     const text = now.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false });
+    const shortDate = now.toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "short" });
+    const fullDate = `${shortDate} · 雾港市`;
     if ($("#clock")) $("#clock").textContent = text;
     if ($("#homeTime")) $("#homeTime").textContent = text;
     if ($("#lockTime")) $("#lockTime").textContent = text;
-    if ($("#shadeDate")) $("#shadeDate").textContent = now.toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" });
+    if ($("#lockDate")) $("#lockDate").textContent = fullDate;
+    if ($("#homeDate")) $("#homeDate").textContent = fullDate;
+    if ($("#shadeDate")) $("#shadeDate").textContent = shortDate;
   }
 
   /* 所有动态按钮都走事件委托，重新渲染 App 后不需要重复绑定。 */
@@ -770,6 +934,7 @@
     if (event.target.closest("#newGameBtn")) return startNewGame();
     if (event.target.closest("#loadGameBtn")) return loadSavedGame();
     if (event.target.closest("#saveGameBtn")) return manuallySaveGame();
+    if (event.target.closest("#continueGameBtn")) return closeStartMenu();
     if (event.target.closest("#menuLauncher")) return openStartMenu();
     if (event.target.closest("#menuCloseBtn")) return closeStartMenu();
     if (event.target.closest("#phoneUnlockBtn")) return unlockPhone();
@@ -788,12 +953,14 @@
 
     const contactButton = event.target.closest("[data-contact]");
     if (contactButton) {
+      clearMessageDelivery();
       state.activeContact = contactButton.dataset.contact;
       state.unread[state.activeContact] = 0;
       saveState();
       return renderChat();
     }
     if (event.target.closest("[data-chat-list]")) {
+      clearMessageDelivery();
       state.activeContact = null;
       saveState();
       return renderChat();
@@ -824,22 +991,51 @@
   $("#homeBtn").addEventListener("click", goHome);
   $("#hintBtn").addEventListener("click", () => alert(currentHint()));
 
-  /* 顶部下拉通知栏手势，同时兼容鼠标和触屏。 */
-  let pointerStartY = null;
-  $(".phone").addEventListener("pointerdown", (event) => {
-    const isTopArea = event.clientY - $(".phone").getBoundingClientRect().top < 76;
-    if (isTopArea || notificationShade.classList.contains("open")) pointerStartY = event.clientY;
-  });
-  $(".phone").addEventListener("pointerup", (event) => {
-    if (pointerStartY === null) return;
-    const deltaY = event.clientY - pointerStartY;
-    pointerStartY = null;
-    if (deltaY > 42) toggleNotificationShade(true);
-    if (deltaY < -36) closeNotificationShade();
-  });
+  /*
+    顶部下拉通知栏手势。
+    Pointer Events 覆盖鼠标和大多数触屏，Touch Events 作为部分安卓内置浏览器的兜底。
+    只有从状态栏开始或通知栏已经打开时才拦截纵向手势，不影响聊天列表正常滚动。
+  */
+  const phoneElement = $(".phone");
+  let shadeGestureStartY = null;
+
+  function canStartShadeGesture(clientY) {
+    const relativeY = clientY - phoneElement.getBoundingClientRect().top;
+    return relativeY < 88 || notificationShade.classList.contains("open");
+  }
+
+  function beginShadeGesture(clientY) {
+    if (canStartShadeGesture(clientY)) shadeGestureStartY = clientY;
+  }
+
+  function finishShadeGesture(clientY) {
+    if (shadeGestureStartY === null) return;
+    const deltaY = clientY - shadeGestureStartY;
+    shadeGestureStartY = null;
+    if (deltaY > 34) toggleNotificationShade(true);
+    if (deltaY < -28) closeNotificationShade();
+  }
+
+  phoneElement.addEventListener("pointerdown", (event) => beginShadeGesture(event.clientY));
+  phoneElement.addEventListener("pointerup", (event) => finishShadeGesture(event.clientY));
+  phoneElement.addEventListener("pointercancel", () => { shadeGestureStartY = null; });
+
+  phoneElement.addEventListener("touchstart", (event) => {
+    const touch = event.touches[0];
+    if (touch) beginShadeGesture(touch.clientY);
+  }, { passive: true });
+
+  phoneElement.addEventListener("touchmove", (event) => {
+    if (shadeGestureStartY !== null) event.preventDefault();
+  }, { passive: false });
+
+  phoneElement.addEventListener("touchend", (event) => {
+    const touch = event.changedTouches[0];
+    if (touch) finishShadeGesture(touch.clientY);
+  }, { passive: true });
 
   tickClock();
-  setInterval(tickClock, 20000);
+  setInterval(tickClock, 1000);
   initScreen();
   updateStartMenu();
   openStartMenu();

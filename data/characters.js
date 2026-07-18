@@ -11,12 +11,27 @@
     title: "雾港来信：回声盲区",
     shortTitle: "雾港来信",
     subtitle: "一部藏在旧手机里的失踪谜案。救人、真相、司法与隐私，没有一个选择完全干净。",
-    version: "1.04",
+    version: "1.05",
     creator: "chandlerler",
     phonePassword: "2217",
-    storageKey: "fogport-echo-blind-zone-v104",
-    saveMetaKey: "fogport-echo-blind-zone-save-meta-v104"
+    storageKey: "fogport-echo-blind-zone-v105",
+    saveMetaKey: "fogport-echo-blind-zone-save-meta-v105"
   };
+
+  /*
+    Demo 剧情时钟
+    ------------------------------------------------------------
+    start / end 使用 [年, 月, 日, 时, 分]，避免读取玩家设备的日期。
+    游戏时间按现实时间等速前进，到当前阶段 end 后停止；满足 requires 后
+    会跳到后续阶段的 start。正式剧本只需替换这张表，不需要修改 game.js。
+  */
+  content.timeline = [
+    { id: "intro", start: [2026, 7, 17, 22, 17], end: [2026, 7, 17, 22, 26], requires: {} },
+    { id: "investigation", start: [2026, 7, 17, 22, 40], end: [2026, 7, 17, 23, 10], requires: { flags: ["searchedPier"] } },
+    { id: "live", start: [2026, 7, 18, 0, 15], end: [2026, 7, 18, 0, 40], requires: { flags: ["linxiaLive"] } },
+    { id: "rescue", start: [2026, 7, 18, 1, 10], end: [2026, 7, 18, 1, 40], requires: { flags: ["linxiaLocated"] } },
+    { id: "finale", start: [2026, 7, 18, 7, 30], end: [2026, 7, 18, 8, 0], requires: { flags: ["rescueComplete"] } }
+  ];
 
   content.apps = {
     chat: "微讯",

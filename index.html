@@ -16,10 +16,9 @@
   <title>雾港来信：回声盲区</title>
   <style>
     /*
-      这个文件是一个“最小可玩模型”：
-      - 所有界面、剧本、谜题逻辑都放在同一个 HTML 中，方便你直接打开试玩。
-      - 后续正式开发时，可以把 GAME_DATA 拆成 JSON 文件，把每个 App 拆成独立组件。
-      - 注释会尽量解释“为什么这样写”，而不是只解释语法。
+      这是一个用于验证玩法框架的最小可玩模型。
+      页面负责模拟手机外观，剧情、线索、事件和结局位于 data 目录，运行逻辑位于 game.js。
+      注释会尽量解释“为什么这样写”，而不是只解释语法。
     */
 
     :root {
@@ -329,6 +328,15 @@
       font-weight: 700;
     }
 
+    .menu-action.continue-action {
+      border-color: rgba(64, 216, 131, .4);
+      background: rgba(64, 216, 131, .1);
+    }
+
+    .menu-action[hidden] {
+      display: none;
+    }
+
     .menu-action:disabled {
       cursor: not-allowed;
       opacity: .38;
@@ -391,6 +399,7 @@
       font-weight: 500;
       position: relative;
       z-index: 42;
+      touch-action: none;
     }
 
     .status-left {
@@ -423,6 +432,7 @@
       background: transparent;
       z-index: 44;
       cursor: grab;
+      touch-action: none;
     }
 
     .signal {
@@ -783,6 +793,7 @@
       transform: translateY(-108%);
       transition: transform .32s cubic-bezier(.2, .8, .2, 1);
       z-index: 40;
+      touch-action: none;
     }
 
     .notification-shade.open {
@@ -1535,6 +1546,8 @@
         aspect-ratio: auto;
         border-radius: 0;
         padding: 0;
+        background: #0d1017;
+        box-shadow: none;
       }
 
       .phone {
@@ -1558,8 +1571,63 @@
       }
     }
 
+    /*
+      有些手机浏览器会用大于 420px 的 CSS 视口，单靠宽度媒体查询仍会显示电脑外壳。
+      粗指针且无悬停能力可以更可靠地识别触屏手机：隐藏模拟刘海、外框和阴影，
+      让游戏直接铺满真实设备的可视区域；电脑仍保留原来的手机模型。
+    */
+    @media (hover: none) and (pointer: coarse) {
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #0d1017;
+      }
+
+      body::before,
+      .speaker {
+        display: none;
+      }
+
+      .stage,
+      .phone-shell,
+      .phone {
+        width: 100%;
+        max-width: none;
+        height: 100vh;
+        height: 100dvh;
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      .phone-shell {
+        aspect-ratio: auto;
+        background: #0d1017;
+      }
+
+      .status-bar {
+        height: calc(44px + env(safe-area-inset-top));
+        padding-top: calc(12px + env(safe-area-inset-top));
+      }
+
+      .screen {
+        inset: calc(44px + env(safe-area-inset-top)) 0 0;
+      }
+
+      .start-menu {
+        border-radius: 0;
+        padding-top: max(54px, calc(28px + env(safe-area-inset-top)));
+        padding-bottom: max(22px, env(safe-area-inset-bottom));
+      }
+    }
+
     /* ========================================================
-       v1.04 多人物剧情系统
+       v1.05 多人物剧情系统
        这些样式服务于联系人、证据照片、关系值和多结局界面。
        ======================================================== */
     .messenger-shell {
@@ -1697,6 +1765,29 @@
 
     .contact-card-copy {
       min-width: 0;
+    }
+
+    .contact-card-copy .typing-status {
+      min-height: 17px;
+      display: block;
+      color: var(--green);
+      line-height: 17px;
+    }
+
+    .contact-card-copy .typing-status.active::after {
+      content: "";
+      display: inline-block;
+      width: 14px;
+      height: 4px;
+      margin-left: 5px;
+      vertical-align: 2px;
+      background: radial-gradient(circle, currentColor 1.5px, transparent 2px) 0 0 / 5px 4px repeat-x;
+      animation: typingPulse 1s ease-in-out infinite;
+    }
+
+    @keyframes typingPulse {
+      0%, 100% { opacity: .35; }
+      50% { opacity: 1; }
     }
 
     .quiet-state {
@@ -2170,6 +2261,11 @@
           </div>
 
           <div class="menu-actions">
+            <button class="menu-action continue-action" type="button" id="continueGameBtn" hidden>
+              <span class="menu-action-icon" aria-hidden="true">›</span>
+              <span>继续游戏</span>
+              <span class="menu-action-meta">返回当前画面</span>
+            </button>
             <button class="menu-action primary" type="button" id="newGameBtn">
               <span class="menu-action-icon" aria-hidden="true">▶</span>
               <span>开始游戏</span>
@@ -2190,7 +2286,7 @@
 
           <footer class="menu-footer">
             <span>制作者 · chandlerler</span>
-            <span id="menuVersion">v1.04</span>
+            <span id="menuVersion">v1.05</span>
           </footer>
         </section>
 
@@ -2211,7 +2307,7 @@
           <section id="lockScreen" class="lock-screen active">
             <div class="lock-top">
               <div class="lock-time" id="lockTime">22:17</div>
-              <div class="lock-date">7月17日 周五 · 雾港市</div>
+              <div class="lock-date" id="lockDate">7月17日 周五 · 雾港市</div>
               <button class="lock-notice" type="button" data-lock-open-chat>
                 <img class="notice-icon character-avatar" src="assets/avatars/linxia.jpg" alt="林夏">
                 <span>
@@ -2265,7 +2361,7 @@
           <section id="homeScreen" class="home-screen">
             <div class="date-card">
               <div class="time" id="homeTime">22:17</div>
-              <div class="date">7月17日 周五 · 雾港市</div>
+              <div class="date" id="homeDate">7月17日 周五 · 雾港市</div>
             </div>
 
             <button class="notice" type="button" data-open-app="chat">
@@ -2379,11 +2475,12 @@
     </section>
   </main>
 
-  <script src="data/characters.js"></script>
-  <script src="data/dialogues.js"></script>
-  <script src="data/clues.js"></script>
-  <script src="data/events.js"></script>
-  <script src="data/endings.js"></script>
-  <script src="game.js"></script>
+  <!-- 版本参数用于绕过手机浏览器对拆分脚本的旧缓存，避免 HTML 与剧情引擎版本不一致。 -->
+  <script src="data/characters.js?v=1.05.3"></script>
+  <script src="data/dialogues.js?v=1.05.3"></script>
+  <script src="data/clues.js?v=1.05.3"></script>
+  <script src="data/events.js?v=1.05.3"></script>
+  <script src="data/endings.js?v=1.05.3"></script>
+  <script src="game.js?v=1.05.3"></script>
 </body>
 </html>
