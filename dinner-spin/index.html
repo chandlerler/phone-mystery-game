@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7ef">
+  <meta name="description" content="早吃、晚吃、不吃，早走、晚走、不走。九个选项，每个概率都是 1/9，转一转就有答案。">
+  <title>吃走转盘 · 今天怎么安排</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='20' fill='%232d3827'/%3E%3Ccircle cx='32' cy='34' r='20' fill='%23d3ed8b'/%3E%3Cpath d='M26 8h12l-6 17z' fill='%23f7f7ef'/%3E%3Ccircle cx='32' cy='34' r='5' fill='%232d3827'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="吃走转盘首页"><span class="brand-mark" aria-hidden="true">✳</span><span>吃走转盘<span class="brand-dot">.</span></span></a>
+      <span class="header-note"><span class="status-dot"></span> 小事，交给随机</span>
+    </header>
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow"><span></span> 今天怎么安排？</p>
+        <h1 id="page-title">别纠结，<span class="highlight">转一下。</span><svg class="title-spark" viewBox="0 0 44 44" aria-hidden="true"><path d="M22 2v40M2 22h40M8 8l28 28M8 36L36 8"/></svg></h1>
+        <p class="intro-copy">吃得早一点，还是多留一会儿？让转盘替你拿个主意。</p>
+      </section>
+      <section class="playground" aria-label="随机转盘">
+        <div class="wheel-side">
+          <div class="wheel-caption"><span class="caption-line"></span> 9 种可能，同样的机会 <span class="caption-line"></span></div>
+          <div class="wheel-stage" id="wheel-stage">
+            <span class="orbit-dot dot-one" aria-hidden="true"></span><span class="orbit-dot dot-two" aria-hidden="true"></span>
+            <svg class="pointer" viewBox="0 0 40 52" aria-hidden="true"><path d="M4 6Q20-2 36 6L22 45Q20 49 18 45Z" fill="#303c2b"/><circle cx="20" cy="12" r="4" fill="#f7f7ef"/></svg>
+            <div class="wheel-frame"><svg id="wheel" viewBox="0 0 500 500" role="img" aria-label="包含九个等大的选项扇区的转盘"></svg></div>
+            <button class="wheel-hub" id="hub-button" aria-label="开始转动转盘"><span aria-hidden="true">↗</span><span>转一下</span></button>
+          </div>
+          <p class="wheel-footnote"><svg viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6.5"/><path d="m6 9 2 2 4-4"/></svg> 每个结果的概率都是 <strong>1/9</strong></p>
+        </div>
+        <div class="decision-side">
+          <div class="decision-heading"><span class="tiny-label">YOUR LITTLE DECISION</span><span class="tiny-star" aria-hidden="true">✧</span></div>
+          <h2>今天，就这么定了。</h2>
+          <p class="decision-copy">轻轻一点，给选择一个答案。</p>
+          <div class="result-card" id="result-card" role="status" aria-live="polite" aria-atomic="true">
+            <span class="result-kicker" id="result-kicker">等待你的幸运一转</span>
+            <div class="result-value" id="result-value"><span class="empty-result" aria-hidden="true">?</span><span class="sr-only">还没有抽取结果</span></div>
+            <p class="result-message" id="result-message">九种安排，哪一种会属于你？</p>
+            <span class="card-corner" aria-hidden="true">↗</span>
+          </div>
+          <button class="spin-button" id="spin-button"><span id="spin-label">转一转，定下来</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <p class="button-note" id="button-note">点击按钮或转盘中心，开启一次随机选择</p>
+        </div>
+      </section>
+      <section class="options-section" aria-labelledby="options-title">
+        <div class="options-heading"><h2 id="options-title">九种可能</h2><span>每一项 · 1/9 ≈ 11.11%</span></div>
+        <ol class="options-list" id="options-list"></ol>
+      </section>
+      <noscript><p class="noscript">请在浏览器中开启 JavaScript，才能使用随机转盘。</p></noscript>
+    </main>
+    <footer><span>把小纠结，变成小乐趣。</span><span>每次独立抽取 · 快乐随缘 <span aria-hidden="true">✳</span></span></footer>
+  </div>
+  <div id="confetti" aria-hidden="true"></div>
+</body>
+</html>
